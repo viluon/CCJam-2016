@@ -10,5 +10,6 @@ local ok, err = pcall( fn, ... )
 
 if not ok then
 	term.redirect( old_term )
+	term.setCursorPos( 1, 1 )
 	error( err, 0 )
 end
