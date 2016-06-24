@@ -13,13 +13,22 @@ local old_term = term.current()
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
 local main_window = blittle.createWindow( parent_window )
 
+local	draw, draw_player
+
 term.redirect( main_window )
 local w, h = term.getSize()
+
+local camera_offset = {
+	x = 0;
+	y = 0;
+}
 
 local local_player = {
 	mass = 40;
 	height = 3;
 	width = 2;
+
+	colour = colours.blue;
 
 	velocity = {
 		x = 0;
@@ -34,11 +43,38 @@ local local_player = {
 	gravity = GRAVITY;
 }
 
+local level = {}
+local players = { local_player }
+
+--- Draw a player
+-- @param player The player to draw
+-- @return nil
+function draw_player( player )
+	term.setBackgroundColor( player.colour )
+
+	for y = -player.height, 0 do
+		term.setCursorPos( player.position.x + camera_offset.x, player.position.y + y + camera_offset.y )
+		term.write( ( " " ):rep( player.width ) )
+	end
+end
+
+--- Update a player
+-- @param player The player to update
+-- @return nil
+function update_player( player )
+	if player.dead then
+		return
+	end
+
+	
+end
+
 --- Render the view
 -- @return nil
-local function draw()
+function draw()
 	-- Draw the background
 	term.setBackgroundColor( colours.lightBlue )
+	term.clear()
 
 	-- Draw the level
 	for i, obj in ipairs( level ) do
@@ -47,7 +83,7 @@ local function draw()
 
 	-- Draw the players
 	for i, player in ipairs( players ) do
-		player:draw()
+		draw_player( player )
 	end
 end
 
@@ -68,6 +104,22 @@ while running do
 	local now = os.clock()
 	local dt = now - last_time
 
+	if ev[ 1 ] == "key" then
+		
+	elseif ev[ 1 ] == "char" then
+		if ev[ 2 ] == "q" then
+			running = false
+		end
+
+	elseif ev[ 1 ] == "terminate" then
+		running = false
+	end
+
+	-- Update players
+	for i, player in ipairs( players ) do
+		update_player( player )
+	end
+
 	draw()
 
 	main_window.setVisible( true )
@@ -76,4 +128,6 @@ while running do
 end
 
 term.redirect( old_term )
+term.setCursorPos( 1, 1 )
+
 logfile:close()
