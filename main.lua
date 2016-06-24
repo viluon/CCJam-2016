@@ -15,7 +15,9 @@ local old_term = term.current()
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
 local main_window = blittle.createWindow( parent_window )
 
-local	draw, draw_player, update_player, round
+local	draw, draw_player, update_player, round, log
+
+local condition
 
 term.redirect( main_window )
 local w, h = term.getSize()
@@ -45,8 +47,26 @@ local local_player = {
 	speed = SPEED;
 }
 
-local level = {}
+local level = {
+	{
+		x = 9;
+		y = h * ( 2/5 ) + 1;
+
+		width = 18;
+		height = 3;
+		colour = colours.grey;
+	}
+}
+
 local players = { local_player }
+
+--- Write to the log file
+-- @param ... The data to write
+-- @return nil
+function log( ... )
+	logfile:write( table.concat( { ... } ) .. "\n" )
+	logfile:flush()
+end
 
 --- Rounds a number to a set amount of decimal places
 -- @param n The number to round
@@ -64,8 +84,20 @@ function draw_player( player )
 	term.setBackgroundColor( player.colour )
 
 	for y = -player.height, 0 do
-		term.setCursorPos( player.position.x + camera_offset.x, h - player.position.y + y + camera_offset.y )
+		term.setCursorPos( round( player.position.x + camera_offset.x ), round( h - player.position.y + y + camera_offset.y ) )
 		term.write( ( " " ):rep( player.width ) )
+	end
+end
+
+--- Render an object
+-- @param obj The object to render
+-- @return nil
+function draw_object( obj )
+	term.setBackgroundColor( obj.colour )
+
+	for y = -obj.height, 0 do
+		term.setCursorPos( round( obj.x + camera_offset.x ), round( h - obj.y + y + camera_offset.y ) )
+		term.write( ( " " ):rep( obj.width ) )
 	end
 end
 
@@ -85,10 +117,18 @@ function update_player( player, dt )
 	-- Check for a collision
 	for i, obj in ipairs( level ) do
 		if ( player.position.x > obj.x and player.position.x < obj.x + obj.width ) or ( player.position.x + player.width > obj.x and player.position.x + player.width < obj.x + obj.width ) or ( player.position.x < obj.x and player.position.x + player.width > obj.x + obj.width ) then
-			if ( player.position.y > obj.y and player.position.y < obj.y + obj.height ) or ( player.position.y - player.height < obj.y and player.position.y - player.height > obj.y - obj.height ) or ( player.position.y < obj.y and player.position.y + player.height > obj.y + obj.height ) then
+			if ( player.position.y > obj.y and player.position.y < obj.y + obj.height ) then
+				condition = 1
+			elseif ( player.position.y + player.height > obj.y and player.position.y + player.height < obj.y + obj.height ) then
+				condition = 2
+			elseif ( player.position.y < obj.y and player.position.y + player.height > obj.y + obj.height ) then
+				condition = 3
+			end
+
+			if ( player.position.y > obj.y and player.position.y < obj.y + obj.height ) or ( player.position.y + player.height > obj.y and player.position.y + player.height < obj.y + obj.height ) or ( player.position.y < obj.y and player.position.y + player.height > obj.y + obj.height ) then
 				-- Resolve the collision
 				player.velocity.y = 0
-				player.position.y = math[ player.speed < 0 and "max" or "min" ]( player.position.y, obj.y + player.height )
+				player.position.y = round( math[ player.speed < 0 and "max" or "min" ]( player.position.y, obj.y + ( player.speed < 0 and player.height + 1 or -player.height - 1 ) ) )
 
 			end
 		end
@@ -96,7 +136,6 @@ function update_player( player, dt )
 
 	-- Actually update the player
 	player.velocity.x = player.velocity.x
-
 	player.velocity.y = player.speed
 
 	player.position.x = player.position.x + player.velocity.x * dt
@@ -112,7 +151,7 @@ function draw()
 
 	-- Draw the level
 	for i, obj in ipairs( level ) do
-		obj:draw()
+		draw_object( obj )
 	end
 
 	-- Draw the players
@@ -141,6 +180,13 @@ while running do
 	if ev[ 1 ] == "key" then
 		if ev[ 2 ] == keys.space then
 			players[ 1 ].speed = -players[ 1 ].speed
+
+		elseif ev[ 2 ] == keys.right then
+			players[ 1 ].velocity.x = players[ 1 ].velocity.x + 2
+
+		elseif ev[ 2 ] == keys.left then
+			players[ 1 ].velocity.x = players[ 1 ].velocity.x - 2
+
 		end
 
 	elseif ev[ 1 ] == "char" then
@@ -162,6 +208,12 @@ while running do
 
 	draw()
 
+	--[[
+	term.setCursorPos( 1, h - players[ 1 ].position.y )
+	term.setBackgroundColor( colours.green )
+	term.write( ( " " ):rep( w ) )
+	--]]
+
 	main_window.setVisible( true )
 
 	-- Do overlay stuff here
@@ -169,7 +221,10 @@ while running do
 	parent_window.write( players[ 1 ].velocity.y )
 
 	parent_window.setCursorPos( 1, 2 )
-	parent_window.write( players[ 1 ].dead )
+	parent_window.write( players[ 1 ].dead and "dead" or "alive" )
+
+	parent_window.setCursorPos( 1, 3 )
+	parent_window.write( condition )
 
 	parent_window.setVisible( true )
 
