@@ -89,32 +89,6 @@ function round( n, places )
 	return math.floor( n * mult + 0.5 ) / mult
 end
 
---- Detects collision of 2 rectangular objects
--- @tparam number x1 The x coordinate of the first object
--- @tparam number y1 The y coordinate of the first object
--- @tparam number w1 The width of the first object
--- @tparam number h1 The height of the first object
--- @tparam number x2 The x coordinate of the second object
--- @tparam number y2 The y coordinate of the second object
--- @tparam number w2 The width of the second object
--- @tparam number h2 The height of the second object
--- @treturn boolean true if the boxes overlap, false if they don't
-function do_collide( x1, y1, w1, h1, x2, y2, w2, h2 )
-	x1 = round( x1 )
-	y1 = round( y1 )
-	w1 = round( w1 )
-	h1 = round( h1 )
-	x2 = round( x2 )
-	y2 = round( y2 )
-	w2 = round( w2 )
-	h2 = round( h2 )
-
-	return	x1 <= x2 + w2 + 1 and
-			x2 <= x1 + w1 + 1 and
-			y1 <= y2 + h2 + 1 and
-			y2 <= y1 + h1 + 1
-end
-
 --- Draw a player
 -- @param player The player to draw
 -- @return nil
@@ -235,12 +209,6 @@ while running do
 	end
 
 	draw()
-
-	--[[
-		term.setCursorPos( 1, h - players[ 1 ].position.y )
-		term.setBackgroundColor( colours.green )
-		term.write( ( " " ):rep( w ) )
-	--]]
 
 	main_window.setVisible( true )
 
