@@ -1,9 +1,11 @@
 
 -- Gravity Gal, a Gravity Guy clone by @viluon
 
--- Built with [BLittle](http://www.computercraft.info/forums2/index.php?/topic/25354-cc-176-blittle-api/)
+-- Built with [BLittle](http://www.computercraft.info/forums2/index.php?/topic/25354-cc-176-blittle-api/) by Bomb Bloke
 if not fs.exists "blittle" then shell.run "pastebin get ujchRSnU blittle" end
 os.loadAPI "blittle"
+-- and [bump.lua](https://github.com/kikito/bump.lua) by kikito
+local bump = dofile "bump.lua"
 
 local logfile = io.open( "/log.txt", "a" )
 
@@ -21,6 +23,8 @@ local condition
 
 term.redirect( main_window )
 local w, h = term.getSize()
+
+local world = bump.newWorld()
 
 local camera_offset = {
 	x = 0;
@@ -50,12 +54,20 @@ local local_player = {
 local level = {
 	{
 		x = 9;
-		y = h * ( 2/5 ) + 1;
+		y = h * ( 3/5 ) + 1;
 
 		width = 18;
 		height = 3;
 		colour = colours.grey;
-	}
+	};
+	{
+		x = 36;
+		y = h * ( 1/5 ) + 1;
+
+		width = 18;
+		height = 3;
+		colour = colours.grey;
+	};
 }
 
 local players = { local_player }
@@ -75,6 +87,32 @@ end
 function round( n, places )
 	local mult = 10 ^ ( places or 0 )
 	return math.floor( n * mult + 0.5 ) / mult
+end
+
+--- Detects collision of 2 rectangular objects
+-- @tparam number x1 The x coordinate of the first object
+-- @tparam number y1 The y coordinate of the first object
+-- @tparam number w1 The width of the first object
+-- @tparam number h1 The height of the first object
+-- @tparam number x2 The x coordinate of the second object
+-- @tparam number y2 The y coordinate of the second object
+-- @tparam number w2 The width of the second object
+-- @tparam number h2 The height of the second object
+-- @treturn boolean true if the boxes overlap, false if they don't
+function do_collide( x1, y1, w1, h1, x2, y2, w2, h2 )
+	x1 = round( x1 )
+	y1 = round( y1 )
+	w1 = round( w1 )
+	h1 = round( h1 )
+	x2 = round( x2 )
+	y2 = round( y2 )
+	w2 = round( w2 )
+	h2 = round( h2 )
+
+	return	x1 <= x2 + w2 + 1 and
+			x2 <= x1 + w1 + 1 and
+			y1 <= y2 + h2 + 1 and
+			y2 <= y1 + h1 + 1
 end
 
 --- Draw a player
@@ -103,6 +141,7 @@ end
 
 --- Update a player
 -- @param player The player to update
+-- @tparam number dt Delta time, time passed since last update
 -- @return nil
 function update_player( player, dt )
 	if player.dead then
@@ -114,32 +153,11 @@ function update_player( player, dt )
 		return
 	end
 
-	-- Check for a collision
-	for i, obj in ipairs( level ) do
-		if ( player.position.x > obj.x and player.position.x < obj.x + obj.width ) or ( player.position.x + player.width > obj.x and player.position.x + player.width < obj.x + obj.width ) or ( player.position.x < obj.x and player.position.x + player.width > obj.x + obj.width ) then
-			if ( player.position.y > obj.y and player.position.y < obj.y + obj.height ) then
-				condition = 1
-			elseif ( player.position.y + player.height > obj.y and player.position.y + player.height < obj.y + obj.height ) then
-				condition = 2
-			elseif ( player.position.y < obj.y and player.position.y + player.height > obj.y + obj.height ) then
-				condition = 3
-			end
-
-			if ( player.position.y > obj.y and player.position.y < obj.y + obj.height ) or ( player.position.y + player.height > obj.y and player.position.y + player.height < obj.y + obj.height ) or ( player.position.y < obj.y and player.position.y + player.height > obj.y + obj.height ) then
-				-- Resolve the collision
-				player.velocity.y = 0
-				player.position.y = round( math[ player.speed < 0 and "max" or "min" ]( player.position.y, obj.y + ( player.speed < 0 and player.height + 1 or -player.height - 1 ) ) )
-
-			end
-		end
-	end
-
 	-- Actually update the player
 	player.velocity.x = player.velocity.x
 	player.velocity.y = player.speed
 
-	player.position.x = player.position.x + player.velocity.x * dt
-	player.position.y = player.position.y + player.velocity.y * dt
+	player.position.x, player.position.y = world:move( player, player.position.x + player.velocity.x * dt, player.position.y + player.velocity.y * dt )
 end
 
 --- Render the view
@@ -158,6 +176,16 @@ function draw()
 	for i, player in ipairs( players ) do
 		draw_player( player )
 	end
+end
+
+-- Initialize world
+
+for i, obj in ipairs( level ) do
+	world:add( obj, obj.x, obj.y, obj.width, obj.height )
+end
+
+for i, player in ipairs( players ) do
+	world:add( player, player.position.x, player.position.y, player.width, player.height )
 end
 
 local last_time = os.clock()
@@ -209,9 +237,9 @@ while running do
 	draw()
 
 	--[[
-	term.setCursorPos( 1, h - players[ 1 ].position.y )
-	term.setBackgroundColor( colours.green )
-	term.write( ( " " ):rep( w ) )
+		term.setCursorPos( 1, h - players[ 1 ].position.y )
+		term.setBackgroundColor( colours.green )
+		term.write( ( " " ):rep( w ) )
 	--]]
 
 	main_window.setVisible( true )
