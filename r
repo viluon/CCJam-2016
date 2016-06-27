@@ -10,6 +10,8 @@ if not fn then
 	error( err, 0 )
 end
 
+setfenv( fn, getfenv() )
+
 local ok, err = pcall( fn, ... )
 
 if not ok then
