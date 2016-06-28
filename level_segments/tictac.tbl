@@ -4,15 +4,15 @@
 			x = 1;
 			y = 51;
 
-			width = 18;
+			width = 22;
 			height = 3;
 			colour = 128; -- colours.grey
 		};
 		{
-			x = 20;
-			y = 4;
+			x = 24;
+			y = 0;
 
-			width = 18;
+			width = 22;
 			height = 3;
 			colour = 128; -- colours.grey
 		};

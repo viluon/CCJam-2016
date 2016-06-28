@@ -2,9 +2,9 @@
 	return {
 		{
 			x = 1;
-			y = 4;
+			y = 0;
 
-			width = 18;
+			width = 22;
 			height = 3;
 			colour = 128; -- colours.grey
 		};
@@ -12,13 +12,25 @@
 			x = 1;
 			y = 51;
 
-			width = 18;
+			width = 22;
 			height = 3;
 			colour = 128; -- colours.grey
 		};
 
 		type = "middle";
 		starter = true;
+		player_positions = {
+			{
+				x = 2;
+				y = 4;
+				direction = 1;
+			};
+			{
+				x = 2;
+				y = 48;
+				direction = -1;
+			};
+		};
 		follow_up = { "top", "bottom", "middle" };
 	}
 end )()
