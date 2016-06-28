@@ -195,6 +195,14 @@ function update_player( player, dt )
 	player.velocity.y = player.speed
 
 	player.position.x, player.position.y = world:move( player, player.position.x + player.velocity.x * dt, player.position.y + player.velocity.y * dt )
+
+	local x, y, collisions, n_collisions = world:check( player, player.position.x, player.position.y + player.velocity.y * 0.01 )
+
+	if n_collisions > 0 then
+		player.can_switch = true
+	else
+		player.can_switch = false
+	end
 end
 
 --- Render the view
@@ -247,7 +255,7 @@ while running do
 	local dt = now - last_time
 
 	if ev[ 1 ] == "key" then
-		if ev[ 2 ] == keys.space then
+		if ev[ 2 ] == keys.space and players[ 1 ].can_switch then
 			players[ 1 ].speed = -players[ 1 ].speed
 
 		elseif ev[ 2 ] == keys.right then
@@ -301,10 +309,15 @@ while running do
 
 	-- Update players
 	local furthest_right = -1
+	local everyone_dead = true
 
 	for i, player in ipairs( players ) do
 		update_player( player, dt )
 		furthest_right = math.max( furthest_right, player.position.x )
+
+		if not player.dead then
+			everyone_dead = false
+		end
 	end
 
 	if furthest_right + camera_offset.x > ( 2 / 3 ) * w then
