@@ -8,10 +8,10 @@ os.loadAPI "blittle"
 local bump = dofile "bump.lua"
 local logfile = io.open( "/log.txt", "a" )
 
-local SPEED = -20
+local SPEED = -30
 local ENABLE_LOGGING = true
 local INITIAL_SCROLL_SPEED = 2
-local PLAYER_BASIC_H_SPEED = 7
+local PLAYER_BASIC_H_SPEED = 10
 local PLAYER_H_SPEED = 5
 
 local old_term = term.current()
@@ -40,6 +40,26 @@ local local_player = {
 	width = 2;
 
 	colour = colours.blue;
+
+	velocity = {
+		x = 0;
+		y = 0;
+	};
+	
+	position = {
+		x = 12;
+		y = h / 2;
+	};
+
+	speed = SPEED;
+}
+
+local second_player = {
+	mass = 40;
+	height = 3;
+	width = 2;
+
+	colour = colours.green;
 
 	velocity = {
 		x = 0;
@@ -114,7 +134,7 @@ local last_segment = starter
 };
 --]]
 
-local players = { local_player }
+local players = { local_player, second_player }
 
 --- Write to the log file
 -- @param ... The data to write
@@ -233,6 +253,14 @@ for i, segment in ipairs( level ) do
 end
 --]]
 
+-- Place players at their appropriate spawn locations
+for i, position in ipairs( starter.player_positions ) do
+	if i > #players then break end
+
+	players[ i ].position = position
+	players[ i ].speed = players[ i ].speed * position.direction
+end
+
 for i, player in ipairs( players ) do
 	world:add( player, player.position.x, player.position.y, player.width, player.height )
 end
@@ -258,13 +286,7 @@ while running do
 		if ev[ 2 ] == keys.space and players[ 1 ].can_switch then
 			players[ 1 ].speed = -players[ 1 ].speed
 
-		elseif ev[ 2 ] == keys.right then
-			players[ 1 ].velocity.x = players[ 1 ].velocity.x + 2
-
-		elseif ev[ 2 ] == keys.left then
-			players[ 1 ].velocity.x = players[ 1 ].velocity.x - 2
-
-		elseif ev[ 2 ] == keys.f then
+		elseif ev[ 2 ] == keys.rightShift and players[ 2 ].can_switch then
 			players[ 2 ].speed = -players[ 2 ].speed
 		end
 
