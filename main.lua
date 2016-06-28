@@ -6,18 +6,19 @@ if not fs.exists "blittle" then shell.run "pastebin get ujchRSnU blittle" end
 os.loadAPI "blittle"
 -- and [bump.lua](https://github.com/kikito/bump.lua) by kikito
 local bump = dofile "bump.lua"
-
 local logfile = io.open( "/log.txt", "a" )
 
 local SPEED = -20
-local AIR_DENSITY = 1.225
-local DRAG_COEFFICIENT = 1.05
+local ENABLE_LOGGING = true
+local INITIAL_SCROLL_SPEED = 2
+local PLAYER_BASIC_H_SPEED = 7
+local PLAYER_H_SPEED = 5
 
 local old_term = term.current()
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
-local main_window = blittle.createWindow( parent_window )
+local main_window = blittle.createWindow( parent_window, nil, nil, nil, nil, false )
 
-local	draw, draw_player, update_player, round, log
+local	draw, draw_player, update_player, round, log, deepcopy
 
 local condition
 
@@ -25,6 +26,8 @@ term.redirect( main_window )
 local w, h = term.getSize()
 
 local world = bump.newWorld()
+
+local furthest_block_generated = -1
 
 local camera_offset = {
 	x = 0;
@@ -51,24 +54,64 @@ local local_player = {
 	speed = SPEED;
 }
 
-local level = {
-	{
-		x = 9;
-		y = h * ( 3/5 ) + 1;
+local level = {}
+local segments = {}
 
-		width = 18;
-		height = 3;
-		colour = colours.grey;
-	};
-	{
-		x = 36;
-		y = h * ( 1/5 ) + 1;
+local directory = fs.getDir( shell.getRunningProgram() ) .. "/level_segments/"
+for i, name in ipairs( fs.list( directory ) ) do
+	local f = io.open( directory .. name, "r" )
+	local contents = f:read( "*a" )
+	f:close()
 
-		width = 18;
-		height = 3;
-		colour = colours.grey;
-	};
-}
+	segments[ i ] = textutils.unserialise( contents )
+	
+	local max_width = -1
+
+	for _, block in ipairs( segments[ i ] ) do
+		max_width = math.max( max_width, block.x + block.width )
+	end
+
+	segments[ i ].total_width = max_width
+end
+
+local starters = {}
+for i, segment in ipairs( segments ) do
+	if segment.starter then
+		starters[ #starters + 1 ] = segment
+	end
+end
+
+if #starters == 0 then
+	error( "No starter segment found", 0 )
+end
+
+local starter = starters[ math.random( 1, #starters ) ]
+
+for i, obj in ipairs( starter ) do
+	world:add( obj, obj.x, obj.y, obj.width, obj.height )
+	level[ #level + 1 ] = obj
+end
+
+local last_segment = starter
+
+--[[
+{
+	x = 9;
+	y = h * ( 3/5 ) + 1;
+
+	width = 18;
+	height = 3;
+	colour = colours.grey;
+};
+{
+	x = 36;
+	y = h * ( 1/5 ) + 1;
+
+	width = 18;
+	height = 3;
+	colour = colours.grey;
+};
+--]]
 
 local players = { local_player }
 
@@ -76,8 +119,25 @@ local players = { local_player }
 -- @param ... The data to write
 -- @return nil
 function log( ... )
+	if not ENABLE_LOGGING then return end
+
 	logfile:write( table.concat( { ... } ) .. "\n" )
 	logfile:flush()
+end
+
+function deepcopy( orig )
+	local orig_type = type( orig )
+	local copy
+	if orig_type == 'table' then
+		copy = {}
+		for orig_key, orig_value in next, orig, nil do
+			copy[ deepcopy( orig_key ) ] = deepcopy( orig_value )
+		end
+		setmetatable( copy, deepcopy( getmetatable( orig ) ) )
+	else -- number, string, boolean, etc
+		copy = orig
+	end
+	return copy
 end
 
 --- Rounds a number to a set amount of decimal places
@@ -122,13 +182,15 @@ function update_player( player, dt )
 		return
 	end
 
-	if player.position.y > h or player.position.y + player.height + 1 < 0 then
+	if player.position.y > h or player.position.y + player.height + 1 < 0 or player.position.x + camera_offset.x < 0 then
 		player.dead = true
+		world:remove( player )
+
 		return
 	end
 
 	-- Actually update the player
-	player.velocity.x = player.velocity.x
+	player.velocity.x = PLAYER_BASIC_H_SPEED + ( 1 - ( player.position.x + camera_offset.x ) / w ) * PLAYER_H_SPEED
 	player.velocity.y = player.speed
 
 	player.position.x, player.position.y = world:move( player, player.position.x + player.velocity.x * dt, player.position.y + player.velocity.y * dt )
@@ -154,9 +216,13 @@ end
 
 -- Initialize world
 
-for i, obj in ipairs( level ) do
-	world:add( obj, obj.x, obj.y, obj.width, obj.height )
+--[[
+for i, segment in ipairs( level ) do
+	for i, obj in ipairs( segment ) do
+		world:add( obj, obj.x, obj.y, obj.width, obj.height )
+	end
 end
+--]]
 
 for i, player in ipairs( players ) do
 	world:add( player, player.position.x, player.position.y, player.width, player.height )
@@ -189,6 +255,8 @@ while running do
 		elseif ev[ 2 ] == keys.left then
 			players[ 1 ].velocity.x = players[ 1 ].velocity.x - 2
 
+		elseif ev[ 2 ] == keys.f then
+			players[ 2 ].speed = -players[ 2 ].speed
 		end
 
 	elseif ev[ 1 ] == "char" then
@@ -203,9 +271,43 @@ while running do
 		end_queued = false
 	end
 
+	-- Generate environment
+	while furthest_block_generated < w - camera_offset.x do
+		local possible_follow_ups = {}
+
+		for _, segment_type in ipairs( last_segment.follow_up ) do
+			for i, segment in ipairs( segments ) do
+				if segment.type == segment_type and not possible_follow_ups[ segment ] then
+					possible_follow_ups[ segment ] = true
+					possible_follow_ups[ #possible_follow_ups + 1 ] = segment
+				end
+			end
+		end
+
+		local follow_up = possible_follow_ups[ math.random( 1, #possible_follow_ups ) ]
+
+		for i, obj in ipairs( follow_up ) do
+			local obj = deepcopy( obj )
+			obj.x = obj.x + furthest_block_generated
+
+			world:add( obj, obj.x, obj.y, obj.width, obj.height )
+			level[ #level + 1 ] = obj
+		end
+
+		furthest_block_generated = furthest_block_generated + follow_up.total_width
+		last_segment = follow_up
+	end
+
 	-- Update players
+	local furthest_right = -1
+
 	for i, player in ipairs( players ) do
 		update_player( player, dt )
+		furthest_right = math.max( furthest_right, player.position.x )
+	end
+
+	if furthest_right + camera_offset.x > ( 2 / 3 ) * w then
+		camera_offset.x = ( 2 / 3 ) * w - furthest_right
 	end
 
 	draw()
