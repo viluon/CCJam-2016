@@ -86,6 +86,7 @@ if #starters == 0 then
 end
 
 local starter = starters[ math.random( 1, #starters ) ]
+furthest_block_generated = starter.total_width
 
 for i, obj in ipairs( starter ) do
 	world:add( obj, obj.x, obj.y, obj.width, obj.height )
