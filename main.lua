@@ -14,6 +14,8 @@ local INITIAL_SCROLL_SPEED = 2
 local PLAYER_BASIC_H_SPEED = 10
 local PLAYER_H_SPEED = 5
 
+local arguments = { ... }
+
 local old_term = term.current()
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
 local main_window = blittle.createWindow( parent_window, nil, nil, nil, nil, false )
@@ -27,6 +29,8 @@ local w, h = term.getSize()
 
 local world = bump.newWorld()
 
+local launch_settings = arguments[ 1 ]
+
 local furthest_block_generated = -1
 
 local camera_offset = {
@@ -39,7 +43,7 @@ local local_player = {
 	height = 3;
 	width = 2;
 
-	colour = colours.blue;
+	colour = launch_settings[ 3 ].options[ launch_settings[ 3 ].value ] or colours.blue;
 
 	velocity = {
 		x = 0;
@@ -104,6 +108,8 @@ end
 if #starters == 0 then
 	error( "No starter segment found", 0 )
 end
+
+error( "checkmate", 0 )
 
 local starter = starters[ math.random( 1, #starters ) ]
 furthest_block_generated = starter.total_width
