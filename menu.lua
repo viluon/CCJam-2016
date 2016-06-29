@@ -20,6 +20,8 @@ Redistribution and use in source and binary forms, with or without modification,
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ]]
 
+--TODO: Mod/powerup system, (Buck's Shotgun (shoot a fellow girlfriend out of the sky), Corvo's Rune (blink to a near location), Stardust (disable visibility for other players))
+
 local MENU_ANIM_TIME = 0.8
 local ELEMENT_ANIM_TIME = 0.8
 local LOGO_REDRAW_TIME = 0.8
@@ -84,17 +86,17 @@ local logo_colour = colours.grey
 local logo_start_redraw_time = os.clock()
 
 local logo = {
-	"   xxxx                      x    x               xxxx         x  ";
-	"  x                               x              x             x  ";
-	"  x  xx  x xx   xxx   x   x  x   xxx   x    x    x  xx   xxx   x  ";
-	"  x   x  xx  x     x  x   x  x    x    x    x    x   x      x  x  ";
-	"  x   x  x      xxxx  x   x  x    x    x    x    x   x   xxxx  x  ";
-	"  x   x  x     x   x   x x   x    x     xxxxx    x   x  x   x  x  ";
-	"   xxx   x      xxxx    x    x     x        x     xxx    xxxx   x ";
-	"                                       xxxxx                      ";
-	"                                                                  ";
-	"                                                                  ";
-	"                                                                  ";
+	"   xxxx                      x    x              xxxx         x  ";
+	"  x                               x             x             x  ";
+	"  x  xx  x xx   xxx   x   x  x   xxx   x   x    x  xx   xxx   x  ";
+	"  x   x  xx  x     x  x   x  x    x    x   x    x   x      x  x  ";
+	"  x   x  x      xxxx  x   x  x    x    x   x    x   x   xxxx  x  ";
+	"  x   x  x     x   x   x x   x    x     xxxx    x   x  x   x  x  ";
+	"   xxx   x      xxxx    x    x     x       x     xxx    xxxx   x ";
+	"                                       xxxx                      ";
+	"                                                                 ";
+	"                                                                 ";
+	"                                                                 ";
 }
 
 local background_window = blittle.createWindow( parent_window, 1, 3, #logo[ 1 ] / 2, #logo / 3 )
@@ -173,13 +175,25 @@ local menu = {
 
 local launch_settings = {
 	{
+		name = "Number of Players";
+		value = 1;
+		options = {
+			1, 2, 3, 4
+		};
+	};
+	{
 		name = "Player Name";
 		value = "Player";
 	};
 	{
-		name = "Lemmmy";
-		value = "poop";
-	}
+		name = "Player Colour";
+		value = 1;
+		options = {
+			colours.red, colours.green, colours.blue, colours.lightBlue, colours.cyan, colours.magenta
+		};
+
+		type = "colour";
+	};
 }
 
 local selected_settings_element
@@ -256,15 +270,32 @@ function draw_settings()
 		local selected = element == selected_settings_element
 
 		parent_window.setBackgroundColour( colours.black )
-		parent_window.setTextColour( colours.lightGrey )
+		parent_window.setTextColour( selected and colours.white or colours.lightGrey )
 
 		parent_window.setCursorPos( width / 2 - #element.name, element.position )
 		parent_window.write( element.name .. ": " )
 
-		parent_window.setBackgroundColour( selected and colours.white or colours.black )
-		parent_window.setTextColour( selected and colours.grey or colours.white )
+		if element.options then
+			parent_window.setTextColour( element.value == 1 and colours.grey or colours.lightGrey )
+			parent_window.write( selected and "\171 " or "< " )
+		end
 
-		parent_window.write( tostring( element.value ) )
+		parent_window.setBackgroundColour( element.type == "colour" and element.options[ element.value ] or ( element.options and colours.black or ( selected and colours.white or colours.black ) ) )
+		parent_window.setTextColour( element.options and colours.white or ( selected and colours.grey or colours.white ) )
+
+		local text = element.options and tostring( element.type == "colour" and "  " or element.options[ element.value ] ) or tostring( element.value )
+		
+		if #text > width / 3 then
+			text = "..." .. text:sub( 4 + #text - width / 3, -1 )
+		end
+
+		parent_window.write( text )
+
+		if element.options then
+			parent_window.setBackgroundColour( colours.black )
+			parent_window.setTextColour( element.value == #element.options and colours.grey or colours.lightGrey )
+			parent_window.write( selected and " \187" or " >" )
+		end
 	end
 end
 
@@ -355,9 +386,37 @@ function launch()
 	local ok, err = pcall( fn, launch_settings )
 
 	if not ok then
-		term.redirect( old_term )
-		term.setCursorPos( 1, 1 )
-		error( err, 0 )
+		term.redirect( actual_term )
+		term.setBackgroundColour( colours.grey )
+		term.clear()
+		term.setTextColour( colours.white )
+
+		local y = math.floor( height / 2 )
+
+		local text = "Oh crap! Gravity Gal crashed."
+		term.setCursorPos( width / 2 - #text / 2, y - 4 )
+		term.write( text )
+
+		local text2 = "We are sorry for the inconvenience :("
+		term.setCursorPos( width / 2 - #text2 / 2, y - 3 )
+		term.write( text2 )
+
+		local text3 = "Wanna get it up and running in no time?"
+		term.setCursorPos( width / 2 - #text3 / 2, y - 1 )
+		term.write( text3 )
+
+		local text4 = "Send @viluon this secret code:"
+		term.setCursorPos( width / 2 - #text4 / 2, y - 0 )
+		term.write( text4 )
+
+		term.setBackgroundColour( colours.white )
+		term.setTextColour( colours.black )
+		term.setCursorPos( width / 2 - #err / 2, y + 2 )
+		term.write( err )
+
+		read()
+
+		error()
 	end
 
 	term.redirect( main_window )
@@ -419,8 +478,10 @@ while true do
 
 	if ev[ 1 ] == "terminate" then
 		break
+
 	elseif ev[ 1 ] == "end" then
 		end_queued = false
+
 	elseif ev[ 1 ] == "mouse_click" then
 		local i = ( ev[ 4 ] - math.floor( height / 2 ) + #menu ) / 2
 
@@ -435,6 +496,55 @@ while true do
 					break
 				end
 			end
+		end
+
+	elseif ev[ 1 ] == "key" then
+		if selected_settings_element and state == "play_menu" then
+			if ev[ 2 ] == keys.backspace then
+				if type( selected_settings_element.value ) == "string" and #selected_settings_element.value > 0 then
+					selected_settings_element.value = selected_settings_element.value:sub( 1, -2 )
+				end
+
+			elseif ev[ 2 ] == keys.enter then
+				selected_settings_element = nil
+			
+			elseif ev[ 2 ] == keys.left then
+				if selected_settings_element.options then
+					selected_settings_element.value = math.max( 1, math.min( selected_settings_element.value - 1, #selected_settings_element.options ) )
+				end
+
+			elseif ev[ 2 ] == keys.right then
+				if selected_settings_element.options then
+					selected_settings_element.value = math.max( 1, math.min( selected_settings_element.value + 1, #selected_settings_element.options ) )
+				end
+
+			elseif ev[ 2 ] == keys.up then
+				-- Find the index of the selected_settings_element and select the one before that
+				for i, element in ipairs( launch_settings ) do
+					if element == selected_settings_element then
+						selected_settings_element = launch_settings[ math.max( i - 1, 1 ) ]
+						break
+					end
+				end
+			
+			elseif ev[ 2 ] == keys.down then
+				-- Find the index of the selected_settings_element and select the one after that
+				for i, element in ipairs( launch_settings ) do
+					if element == selected_settings_element then
+						selected_settings_element = launch_settings[ math.min( i + 1, #launch_settings ) ]
+						break
+					end
+				end
+			end
+		end
+
+	elseif ev[ 1 ] == "char" then
+		if selected_settings_element and state == "play_menu" and type( selected_settings_element.value ) == "string" then
+			selected_settings_element.value = selected_settings_element.value .. ev[ 2 ]
+
+		elseif ev[ 2 ] == "q" then
+			--WARN: Hard link!
+			menu[ #menu ].fn()
 		end
 	end
 
