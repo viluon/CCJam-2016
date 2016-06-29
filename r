@@ -1,11 +1,11 @@
 
 local old_term = term.current()
 
-local f = io.open( "main.lua", "r" )
+local f = io.open( "menu.lua", "r" )
 local contents = f:read( "*a" )
 f:close()
 
-local fn, err = loadstring( contents, "main.lua" )
+local fn, err = loadstring( contents, "menu.lua" )
 if not fn then
 	error( err, 0 )
 end
