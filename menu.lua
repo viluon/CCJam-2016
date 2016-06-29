@@ -78,12 +78,16 @@ term.redirect( main_window )
 local w, h = term.getSize()
 local width, height = parent_window.getSize()
 
-local	random_fill, draw_menu, play, easeInOutQuad, update_settings, draw_settings
+local	random_fill, draw_menu, launch, play, back_from_play, easeInOutQuad, update_settings, draw_settings, search, redraw_logo,
+		randomize_logo_colour
 
 local state = "main_menu"
+local selected_game
 
 local logo_colour = colours.grey
 local logo_start_redraw_time = os.clock()
+
+local logo_colours = { colours.lightBlue, colours.cyan, colours.green, colours.white, colours.red, colours.magenta }
 
 local logo = {
 	"   xxxx                      x    x              xxxx         x  ";
@@ -103,22 +107,35 @@ local background_window = blittle.createWindow( parent_window, 1, 3, #logo[ 1 ] 
 
 local menu = {
 	{
-		position = 0;
 		name = "Play";
-
 		fn = function()
 			if state == "main_menu" then
 				return play()
 			elseif state == "play_menu" then
 				return launch()
+			elseif state == "search_menu" then
+				back_from_search()
+				return play()
 			end
 		end;
 	};
 
 	{
-		position = 0;
-		name = "Exit";
+		name = "Join";
+		fn = function()
+			if state == "search_menu" then
+				return launch()
+			elseif state == "main_menu" then
+				return search()
+			elseif state == "play_menu" then
+				back_from_play()
+				return search()
+			end
+		end;
+	};
 
+	{
+		name = "Exit";
 		fn = function()
 			if state == "main_menu" then
 				--[[
@@ -168,6 +185,8 @@ local menu = {
 				return error()
 			elseif state == "play_menu" then
 				return back_from_play()
+			elseif state == "search_menu" then
+				return back_from_search()
 			end
 		end;
 	};
@@ -223,7 +242,7 @@ function random_fill()
 
 	if dt > 0.001 then
 		term.setBackgroundColour( colours.black )
-		term.scroll( -1 * dt )
+		term.scroll( -1 )
 
 		for y = 1, 1 do
 			for x = 1, w * 0.05 do
@@ -234,6 +253,16 @@ function random_fill()
 		end
 		
 		last_pass = os.clock()
+	end
+end
+
+--- Randomize the logo colour
+-- @return nil
+function randomize_logo_colour()
+	local old_colour = logo_colour
+
+	while logo_colour == old_colour do
+		logo_colour = logo_colours[ math.random( 1, #logo_colours ) ]
 	end
 end
 
@@ -316,7 +345,7 @@ function play()
 	local now = os.clock()
 	state = "play_menu"
 	
-	logo_colour = colours.lightGrey
+	randomize_logo_colour()
 	logo_start_redraw_time = now
 
 	-- Move all the menu elements except Play to the right, and move Play to the left
@@ -334,6 +363,47 @@ function play()
 	-- Let the setting elements slide in
 	for i, element in ipairs( launch_settings ) do
 		element.target_position = height / 2 - #launch_settings + i * 2
+
+		element.original_position = element.position
+		element.start_anim_time = now
+	end
+end
+
+--- Search for an existing game
+-- @return nil
+function search()
+	local now = os.clock()
+	state = "search_menu"
+
+	randomize_logo_colour()
+	logo_start_redraw_time = now
+
+	-- Move all the menu elements except Join to the right, and move Join to the left
+	for i, element in ipairs( menu ) do
+		if element.name == "Join" then
+			element.target_position = 1
+		else
+			element.target_position = width - #element.name + 1
+		end
+
+		element.original_position = element.position
+		element.start_anim_time = now
+	end
+
+end
+
+--- Return from the search screen
+-- @return nil
+function back_from_search()
+	local now = os.clock()
+	state = "main_menu"
+
+	logo_colour = colours.grey
+	logo_start_redraw_time = now
+
+	-- Move the menu elements back to the centre
+	for i, element in ipairs( menu ) do
+		element.target_position = width / 2 - #element.name / 2
 
 		element.original_position = element.position
 		element.start_anim_time = now
@@ -383,7 +453,7 @@ function launch()
 	setfenv( fn, getfenv() )
 
 	term.redirect( old_term )
-	local ok, err = pcall( fn, launch_settings )
+	local ok, err = pcall( fn, launch_settings, selected_game )
 
 	if not ok then
 		term.redirect( actual_term )
@@ -393,11 +463,11 @@ function launch()
 
 		local y = math.floor( height / 2 )
 
-		local text = "Oh crap! Gravity Gal crashed."
+		local text = "Oh crap! Gravity Gal has crashed."
 		term.setCursorPos( width / 2 - #text / 2, y - 4 )
 		term.write( text )
 
-		local text2 = "We are sorry for the inconvenience :("
+		local text2 = "Sorry for the inconvenience :("
 		term.setCursorPos( width / 2 - #text2 / 2, y - 3 )
 		term.write( text2 )
 
@@ -555,11 +625,11 @@ while true do
 	background_window.setVisible( true )
 
 	-- Overlay stuff
-	update_menu( now )
-	draw_menu()
-
 	update_settings( now )
+	update_menu( now )
+	
 	draw_settings()
+	draw_menu()
 
 	parent_window.setVisible( true )
 
