@@ -21,6 +21,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 ]]
 
 local MENU_ANIM_TIME = 0.8
+local ELEMENT_ANIM_TIME = 0.8
+local LOGO_REDRAW_TIME = 0.8
 
 local math = math
 local term = term
@@ -66,6 +68,7 @@ old_term = {
 	isColor = actual_term.isColor;
 	isColour = actual_term.isColour;
 }
+
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
 local main_window = blittle.createWindow( parent_window )
 
@@ -73,10 +76,12 @@ term.redirect( main_window )
 local w, h = term.getSize()
 local width, height = parent_window.getSize()
 
-local	random_fill, draw_menu, play, easeInOutQuad
+local	random_fill, draw_menu, play, easeInOutQuad, update_settings, draw_settings
 
-local clicks_enabled = true
 local state = "main_menu"
+
+local logo_colour = colours.grey
+local logo_start_redraw_time = os.clock()
 
 local logo = {
 	"   xxxx                      x    x               xxxx         x  ";
@@ -166,6 +171,19 @@ local menu = {
 	};
 }
 
+local launch_settings = {
+	{
+		name = "Player Name";
+		value = "Player";
+	};
+	{
+		name = "Lemmmy";
+		value = "poop";
+	}
+}
+
+local selected_settings_element
+
 -- t = elapsed time
 -- b = begin
 -- c = change == ending - beginning
@@ -218,6 +236,7 @@ function draw_menu()
 end
 
 --- Update menu elements (for animations)
+-- @param now The current time
 -- @return nil
 function update_menu( now )
 	for i, element in ipairs( menu ) do
@@ -227,11 +246,47 @@ function update_menu( now )
 	end
 end
 
+--- Draw the settings
+-- @return nil
+function draw_settings()
+	parent_window.setBackgroundColour( colours.black )
+	parent_window.setTextColour( colours.white )
+
+	for i, element in ipairs( launch_settings ) do
+		local selected = element == selected_settings_element
+
+		parent_window.setBackgroundColour( colours.black )
+		parent_window.setTextColour( colours.lightGrey )
+
+		parent_window.setCursorPos( width / 2 - #element.name, element.position )
+		parent_window.write( element.name .. ": " )
+
+		parent_window.setBackgroundColour( selected and colours.white or colours.black )
+		parent_window.setTextColour( selected and colours.grey or colours.white )
+
+		parent_window.write( tostring( element.value ) )
+	end
+end
+
+--- Update the setting elements
+-- @param now The current time
+-- @return nil
+function update_settings( now )
+	for i, element in ipairs( launch_settings ) do
+		if element.position ~= element.target_position then
+			element.position = easeInOutQuad( now - element.start_anim_time, element.original_position, element.target_position - element.original_position, ELEMENT_ANIM_TIME )
+		end
+	end
+end
+
 --- Prepare the before-launch screen
 -- @return nil
 function play()
 	local now = os.clock()
 	state = "play_menu"
+	
+	logo_colour = colours.lightGrey
+	logo_start_redraw_time = now
 
 	-- Move all the menu elements except Play to the right, and move Play to the left
 	for i, element in ipairs( menu ) do
@@ -244,6 +299,14 @@ function play()
 		element.original_position = element.position
 		element.start_anim_time = now
 	end
+
+	-- Let the setting elements slide in
+	for i, element in ipairs( launch_settings ) do
+		element.target_position = height / 2 - #launch_settings + i * 2
+
+		element.original_position = element.position
+		element.start_anim_time = now
+	end
 end
 
 --- Return from the before-launch screen
@@ -251,14 +314,27 @@ end
 function back_from_play()
 	local now = os.clock()
 	state = "main_menu"
+	
+	logo_colour = colours.grey
+	logo_start_redraw_time = now
 
-	-- Move the elements back to the centre
+	-- Move the menu elements back to the centre
 	for i, element in ipairs( menu ) do
 		element.target_position = width / 2 - #element.name / 2
 
 		element.original_position = element.position
 		element.start_anim_time = now
 	end
+
+	-- Move the setting elements back down (out of the screen)
+	for i, element in ipairs( launch_settings ) do
+		element.target_position = height + i * 2
+
+		element.original_position = element.position
+		element.start_anim_time = now
+	end
+
+	selected_settings_element = nil
 end
 
 --- Launch the game
@@ -287,6 +363,22 @@ function launch()
 	term.redirect( main_window )
 end
 
+--- Redraw the Gravity Gal logo
+-- @return nil
+function redraw_logo( now )
+	-- Draw to the background window
+	background_window.setBackgroundColour( logo_colour )
+
+	for y, row in ipairs( logo ) do
+		for i = 1, #row * easeInOutQuad( now - logo_start_redraw_time, 0, 1, LOGO_REDRAW_TIME ) do
+			if row:sub( i, i ) == "x" then
+				background_window.setCursorPos( i, y )
+				background_window.write( " " )
+			end
+		end
+	end
+end
+
 -- Cook initial menu element positions
 for i, element in ipairs( menu ) do
 	local x = width / 2 - #element.name / 2
@@ -297,20 +389,19 @@ for i, element in ipairs( menu ) do
 	end
 end
 
--- Draw to the background window
-background_window.setBackgroundColour( colours.grey )
-
-for y, row in ipairs( logo ) do
-	for i = 1, #row do
-		if row:sub( i, i ) == "x" then
-			background_window.setCursorPos( i, y )
-			background_window.write( " " )
-		end
+-- Cook initial launch settings element positions
+for i, element in ipairs( launch_settings ) do
+	if not element.target_position then
+		element.target_position = height + i * 2
+		element.position = height + i * 2
 	end
 end
 
 local last_time = os.clock()
 local end_queued = false
+
+-- Render the logo
+redraw_logo( last_time )
 
 while true do
 	parent_window.setVisible( false )
@@ -333,12 +424,22 @@ while true do
 	elseif ev[ 1 ] == "mouse_click" then
 		local i = ( ev[ 4 ] - math.floor( height / 2 ) + #menu ) / 2
 
-		if clicks_enabled and menu[ i ] and ev[ 3 ] >= math.floor( menu[ i ].position ) and ev[ 3 ] < math.floor( menu[ i ].position + #menu[ i ].name ) then
+		if menu[ i ] and ev[ 3 ] >= math.floor( menu[ i ].position ) and ev[ 3 ] < math.floor( menu[ i ].position + #menu[ i ].name ) then
 			menu[ i ].fn()
+
+		elseif state == "play_menu" then
+			-- Check whether we hit a setting element
+			for i, element in ipairs( launch_settings ) do
+				if math.floor( element.position ) == ev[ 4 ] then
+					selected_settings_element = element
+					break
+				end
+			end
 		end
 	end
 
 	random_fill()
+	redraw_logo( now )
 
 	main_window.setVisible( true )
 	background_window.setVisible( true )
@@ -346,6 +447,9 @@ while true do
 	-- Overlay stuff
 	update_menu( now )
 	draw_menu()
+
+	update_settings( now )
+	draw_settings()
 
 	parent_window.setVisible( true )
 
