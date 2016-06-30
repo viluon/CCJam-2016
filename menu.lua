@@ -85,6 +85,7 @@ local state = "main_menu"
 local selected_game
 
 local logo_colour = colours.grey
+local logo_coloured = false
 local logo_start_redraw_time = os.clock()
 
 local logo_colours = { colours.lightBlue, colours.cyan, colours.green, colours.white, colours.red, colours.magenta }
@@ -260,9 +261,13 @@ end
 -- @return nil
 function randomize_logo_colour()
 	local old_colour = logo_colour
+	local c = 1
 
-	while logo_colour == old_colour do
+	logo_coloured = true
+
+	while logo_colour == old_colour and c < 10 do
 		logo_colour = logo_colours[ math.random( 1, #logo_colours ) ]
+		c = c + 1
 	end
 end
 
@@ -398,7 +403,7 @@ function back_from_search()
 	local now = os.clock()
 	state = "main_menu"
 
-	logo_colour = colours.grey
+	logo_coloured = false
 	logo_start_redraw_time = now
 
 	-- Move the menu elements back to the centre
@@ -416,7 +421,7 @@ function back_from_play()
 	local now = os.clock()
 	state = "main_menu"
 	
-	logo_colour = colours.grey
+	logo_coloured = false
 	logo_start_redraw_time = now
 
 	-- Move the menu elements back to the centre
@@ -496,7 +501,7 @@ end
 -- @return nil
 function redraw_logo( now )
 	-- Draw to the background window
-	background_window.setBackgroundColour( logo_colour )
+	background_window.setBackgroundColour( logo_coloured and logo_colour or colours.grey )
 
 	for y, row in ipairs( logo ) do
 		for i = 1, #row * easeInOutQuad( now - logo_start_redraw_time, 0, 1, LOGO_REDRAW_TIME ) do
