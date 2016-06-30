@@ -8,13 +8,14 @@ if not blittle then os.loadAPI "blittle" end
 local bump = dofile "bump.lua"
 local logfile = io.open( "/log.txt", "a" )
 
-local SPEED = -30
+local arguments = ( { ... } )[ 1 ]
+
+local GAME_CHANNEL = arguments.GAME_CHANNEL
+local SPEED = arguments.SPEED
 local ENABLE_LOGGING = true
 local INITIAL_SCROLL_SPEED = 2
 local PLAYER_BASIC_H_SPEED = 10
 local PLAYER_H_SPEED = 5
-
-local arguments = { ... }
 
 local old_term = term.current()
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
@@ -29,10 +30,11 @@ local w, h = term.getSize()
 
 local world = bump.newWorld()
 
-local launch_settings = arguments[ 1 ]
-local secret_settings = arguments[ 2 ]
-local modem = arguments[ 3 ]
-local join_game = arguments[ 4 ]
+local launch_settings = arguments.launch_settings
+local secret_settings = arguments.secret_settings
+local modem = arguments.modem
+local selected_game = arguments.selected_game
+local local_player = arguments.local_player
 
 local furthest_block_generated = -1
 
@@ -41,8 +43,8 @@ local camera_offset = {
 	y = 0;
 }
 
+--[[
 local local_player = {
-	mass = 40;
 	height = 3;
 	width = 2;
 
@@ -62,7 +64,6 @@ local local_player = {
 }
 
 local second_player = {
-	mass = 40;
 	height = 3;
 	width = 2;
 
@@ -80,6 +81,7 @@ local second_player = {
 
 	speed = SPEED;
 }
+--]]
 
 local level = {}
 local segments = {}
@@ -145,7 +147,7 @@ local last_segment = starter
 };
 --]]
 
-local players = { local_player }
+local players = arguments.players
 
 --- Write to the log file
 -- @param ... The data to write
@@ -374,7 +376,7 @@ while running do
 		end
 	end
 
-	if not join_game then
+	if not selected_game then
 		-- Generate environment
 		while furthest_block_generated < w - camera_offset.x do
 			local possible_follow_ups = {}
