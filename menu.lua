@@ -1,5 +1,5 @@
 
--- Gravity Gal, a Gravity Guy clone by @viluon
+-- Gravity Girl, a Gravity Guy clone by @viluon
 
 -- Built with [BLittle](http://www.computercraft.info/forums2/index.php?/topic/25354-cc-176-blittle-api/) by Bomb Bloke
 if not fs.exists "blittle" then shell.run "pastebin get ujchRSnU blittle" end
@@ -97,17 +97,17 @@ local logo_start_redraw_time = os.clock()
 local logo_colours = { colours.lightBlue, colours.cyan, colours.green, colours.white, colours.red, colours.magenta }
 
 local logo = {
-	"   xxxx                      x    x              xxxx         x  ";
-	"  x                               x             x             x  ";
-	"  x  xx  x xx   xxx   x   x  x   xxx   x   x    x  xx   xxx   x  ";
-	"  x   x  xx  x     x  x   x  x    x    x   x    x   x      x  x  ";
-	"  x   x  x      xxxx  x   x  x    x    x   x    x   x   xxxx  x  ";
-	"  x   x  x     x   x   x x   x    x     xxxx    x   x  x   x  x  ";
-	"   xxx   x      xxxx    x    x     x       x     xxx    xxxx   x ";
-	"                                       xxxx                      ";
-	"                                                                 ";
-	"                                                                 ";
-	"                                                                 ";
+	"   xxxx                      x    x              xxxx  x         x  ";
+	"  x                               x             x                x  ";
+	"  x  xx  x xx   xxx   x   x  x   xxx   x   x    x  xx  x  x xx   x  ";
+	"  x   x  xx  x     x  x   x  x    x    x   x    x   x  x  xx  x  x  ";
+	"  x   x  x      xxxx  x   x  x    x    x   x    x   x  x  x      x  ";
+	"  x   x  x     x   x   x x   x    x     xxxx    x   x  x  x      x  ";
+	"   xxx   x      xxxx    x    x     x       x     xxx   x  x       x ";
+	"                                       xxxx                         ";
+	"                                                                    ";
+	"                                                                    ";
+	"                                                                    ";
 }
 
 local background_window = blittle.createWindow( parent_window, 1, 3, #logo[ 1 ] / 2, #logo / 3 )
@@ -588,7 +588,7 @@ function launch()
 
 		local y = math.floor( height / 2 )
 
-		local text = "Oh crap! Gravity Gal has crashed."
+		local text = "Oh crap! Gravity Girl has crashed."
 		term.setCursorPos( width / 2 - #text / 2, y - 4 )
 		term.write( text )
 
@@ -617,7 +617,7 @@ function launch()
 	term.redirect( main_window )
 end
 
---- Redraw the Gravity Gal logo
+--- Redraw the Gravity Girl logo
 -- @return nil
 function redraw_logo( now )
 	-- Draw to the background window

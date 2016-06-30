@@ -1,4 +1,4 @@
-# Gravity Gal
+# Gravity Girl
 
 [![forthebadge](http://forthebadge.com/images/badges/uses-git.svg)](http://forthebadge.com)
 [![forthebadge](http://forthebadge.com/images/badges/uses-badges.svg)](http://forthebadge.com)

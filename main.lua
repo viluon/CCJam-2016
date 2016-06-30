@@ -1,5 +1,5 @@
 
--- Gravity Gal, a Gravity Guy clone by @viluon
+-- Gravity Girl, a Gravity Guy clone by @viluon
 
 -- Built with [BLittle](http://www.computercraft.info/forums2/index.php?/topic/25354-cc-176-blittle-api/) by Bomb Bloke
 if not fs.exists "blittle" then shell.run "pastebin get ujchRSnU blittle" end
