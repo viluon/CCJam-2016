@@ -30,6 +30,8 @@ local w, h = term.getSize()
 local world = bump.newWorld()
 
 local launch_settings = arguments[ 1 ]
+local secret_settings = arguments[ 2 ]
+local join_game = arguments[ 3 ]
 
 local furthest_block_generated = -1
 
@@ -108,8 +110,6 @@ end
 if #starters == 0 then
 	error( "No starter segment found", 0 )
 end
-
-error( "checkmate", 0 )
 
 local starter = starters[ math.random( 1, #starters ) ]
 furthest_block_generated = starter.total_width

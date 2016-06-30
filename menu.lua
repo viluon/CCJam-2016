@@ -72,7 +72,7 @@ old_term = {
 }
 
 local	random_fill, draw_menu, launch, play, back_from_play, easeInOutQuad, update_elements, draw_settings, search, redraw_logo,
-		randomize_logo_colour, draw_search_results, back_from_search
+		randomize_logo_colour, draw_search_results, back_from_search, hide_secrets
 
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
 local main_window = blittle.createWindow( parent_window )
@@ -221,7 +221,34 @@ local launch_settings = {
 	};
 }
 
+local secret_settings = {
+	{
+		name = "Multishell Support";
+		value = 1;
+		options = {
+			"On", "Off"
+		};
+	};
+
+	{
+		name = "Explicit Content";
+		value = 1;
+		options = {
+			"Off", "On"
+		};
+	};
+
+	{
+		name = "Detailed Background";
+		value = 1;
+		options = {
+			"On", "Off"
+		};
+	};
+}
+
 local selected_settings_element
+local selected_secret_settings_element
 local selected_search_result
 
 local search_results = {}
@@ -303,6 +330,42 @@ function draw_menu()
 	end
 end
 
+--- Draw the secret settings overlay
+-- @return nil
+function draw_secret_settings()
+	for i, element in ipairs( secret_settings ) do
+		local selected = element == selected_secret_settings_element
+
+		parent_window.setBackgroundColour( colours.black )
+		parent_window.setTextColour( selected and colours.white or colours.lightGrey )
+
+		parent_window.setCursorPos( width / 2 - #element.name, element.position )
+		parent_window.write( element.name .. ": " )
+
+		if element.options then
+			parent_window.setTextColour( element.value == 1 and colours.grey or colours.lightGrey )
+			parent_window.write( selected and "\171 " or "< " )
+		end
+
+		parent_window.setBackgroundColour( element.type == "colour" and element.options[ element.value ] or ( element.options and colours.black or ( selected and colours.white or colours.black ) ) )
+		parent_window.setTextColour( element.options and colours.white or ( selected and colours.grey or colours.white ) )
+
+		local text = element.options and tostring( element.type == "colour" and "  " or element.options[ element.value ] ) or tostring( element.value )
+		
+		if #text > width / 3 then
+			text = "..." .. text:sub( 4 + #text - width / 3, -1 )
+		end
+
+		parent_window.write( text )
+
+		if element.options then
+			parent_window.setBackgroundColour( colours.black )
+			parent_window.setTextColour( element.value == #element.options and colours.grey or colours.lightGrey )
+			parent_window.write( selected and " \187" or " >" )
+		end
+	end
+end
+
 --- Draw the settings
 -- @return nil
 function draw_settings()
@@ -365,6 +428,21 @@ function update_elements( now, tbl )
 		if element.position ~= element.target_position then
 			element.position = easeInOutQuad( now - element.start_anim_time, element.original_position, element.target_position - element.original_position, ELEMENT_ANIM_TIME )
 		end
+	end
+end
+
+--- Hide the secret settings
+-- @param now The current time
+-- @return nil
+function hide_secrets( now )
+	secret_menu = false
+
+	-- Return the elements back off-screen
+	for i, element in ipairs( secret_settings ) do
+		element.target_position = -i * 2
+
+		element.original_position = element.position
+		element.start_anim_time = now
 	end
 end
 
@@ -499,7 +577,7 @@ function launch()
 	setfenv( fn, getfenv() )
 
 	term.redirect( old_term )
-	local ok, err = pcall( fn, launch_settings, selected_game )
+	local ok, err = pcall( fn, launch_settings, secret_settings, selected_game )
 
 	if not ok then
 		term.redirect( actual_term )
@@ -580,6 +658,14 @@ for i, element in ipairs( search_results ) do
 	end
 end
 
+-- Cook initial secret settings element positions
+for i, element in ipairs( secret_settings ) do
+	if not element.target_position then
+		element.target_position = -i * 2
+		element.position = -i * 2
+	end
+end
+
 local last_time = os.clock()
 local end_queued = false
 
@@ -610,11 +696,45 @@ while true do
 		local i = ( ev[ 4 ] - math.floor( height / 2 ) + #menu ) / 2
 
 		if menu[ i ] and ev[ 3 ] >= math.floor( menu[ i ].position ) and ev[ 3 ] < math.floor( menu[ i ].position + #menu[ i ].name ) then
+			hide_secrets( now )
 			menu[ i ].fn()
 
 		elseif state == "play_menu" then
 			if ev[ 3 ] == width and ev[ 4 ] == 1 then
 				-- Secret advanced settings menu!
+				if secret_menu then
+					hide_secrets( now )
+
+				else
+					-- Let the secrets slide in (from top)
+					for i, element in ipairs( secret_settings ) do
+						element.target_position = height / 2 - #secret_settings / 2 + i * 2
+
+						element.original_position = element.position
+						element.start_anim_time = now
+					end
+
+					secret_menu = true
+
+				end
+
+			elseif secret_menu then
+				-- Check whether we hit a *secret* setting element
+				for i, element in ipairs( secret_settings ) do
+					if math.floor( element.position ) == ev[ 4 ] then
+						selected_secret_settings_element = element
+
+						if element.options then
+							if ev[ 3 ] >= width / 2 and ev[ 3 ] <= width / 2 + 3 then
+								element.value = math.max( 1, element.value - 1 )
+							elseif ev[ 3 ] >= width / 2 then
+								element.value = math.min( #element.options, element.value + 1 )
+							end
+						end
+
+						break
+					end
+				end
 
 			else
 				-- Check whether we hit a setting element
@@ -694,11 +814,13 @@ while true do
 
 	-- Overlay stuff
 	update_elements( now, launch_settings )
-	update_elements( now, menu )
 	update_elements( now, search_results )
-	
+	update_elements( now, secret_settings )
+	update_elements( now, menu )
+
 	draw_settings()
 	draw_search_results()
+	draw_secret_settings()
 	draw_menu()
 
 	if state == "play_menu" then
