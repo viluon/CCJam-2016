@@ -8,16 +8,16 @@ if not blittle then os.loadAPI "blittle" end
 -- The following disclaimer applies to the easeInOutQuad function, defined further down the file, which has been taken (with slight modifications)
 -- from Robert Penner's Easing Equations library for Lua (https://github.com/EmmanuelOga/easing)
 --[[
-Disclaimer for Robert Penner's Easing Equations license:
-TERMS OF USE - EASING EQUATIONS
-Open source under the BSD License.
-Copyright © 2001 Robert Penner
-All rights reserved.
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-		* Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-		* Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-		* Neither the name of the author nor the names of contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+	Disclaimer for Robert Penner's Easing Equations license:
+	TERMS OF USE - EASING EQUATIONS
+	Open source under the BSD License.
+	Copyright © 2001 Robert Penner
+	All rights reserved.
+	Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+			* Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+			* Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+			* Neither the name of the author nor the names of contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ]]
 
 --TODO: Mod/powerup system, (Buck's Shotgun (shoot a fellow girlfriend out of the sky), Corvo's Rune (blink to a near location), Stardust (disable visibility for other players))
@@ -71,6 +71,9 @@ old_term = {
 	isColour = actual_term.isColour;
 }
 
+local	random_fill, draw_menu, launch, play, back_from_play, easeInOutQuad, update_elements, draw_settings, search, redraw_logo,
+		randomize_logo_colour, draw_search_results, back_from_search
+
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
 local main_window = blittle.createWindow( parent_window )
 
@@ -78,10 +81,12 @@ term.redirect( main_window )
 local w, h = term.getSize()
 local width, height = parent_window.getSize()
 
-local	random_fill, draw_menu, launch, play, back_from_play, easeInOutQuad, update_settings, draw_settings, search, redraw_logo,
-		randomize_logo_colour
+local modem = peripheral.find( "modem", function( name, object )
+	return object.isWireless()
+end )
 
 local state = "main_menu"
+local secret_menu
 local selected_game
 
 local logo_colour = colours.grey
@@ -124,7 +129,7 @@ local menu = {
 	{
 		name = "Join";
 		fn = function()
-			if state == "search_menu" then
+			if state == "search_menu" and modem then
 				return launch()
 			elseif state == "main_menu" then
 				return search()
@@ -217,6 +222,21 @@ local launch_settings = {
 }
 
 local selected_settings_element
+local selected_search_result
+
+local search_results = {}
+
+if not modem then
+	search_results[ 1 ] = {
+		name = "No wireless modem found :(";
+		not_clickable = true;
+	}
+else
+	search_results[ 1 ] = {
+		name = "Searching for games...";
+		not_clickable = true;
+	}
+end
 
 -- t = elapsed time
 -- b = begin
@@ -283,17 +303,6 @@ function draw_menu()
 	end
 end
 
---- Update menu elements (for animations)
--- @param now The current time
--- @return nil
-function update_menu( now )
-	for i, element in ipairs( menu ) do
-		if element.position ~= element.target_position then
-			element.position = easeInOutQuad( now - element.start_anim_time, element.original_position, element.target_position - element.original_position, MENU_ANIM_TIME )
-		end
-	end
-end
-
 --- Draw the settings
 -- @return nil
 function draw_settings()
@@ -333,11 +342,26 @@ function draw_settings()
 	end
 end
 
---- Update the setting elements
--- @param now The current time
+--- Draw the search results
 -- @return nil
-function update_settings( now )
-	for i, element in ipairs( launch_settings ) do
+function draw_search_results()
+	for i, element in ipairs( search_results ) do
+		local selected = element == selected_search_result
+
+		parent_window.setBackgroundColour( colours.black )
+		parent_window.setTextColour( colours.white )
+
+		parent_window.setCursorPos( width / 2 - #element.name / 2, element.position )
+		parent_window.write( element.name )
+	end
+end
+
+--- Update elements of tbl
+-- @param now The current time
+-- @param tbl Table to update
+-- @return nil
+function update_elements( now, tbl )
+	for i, element in ipairs( tbl ) do
 		if element.position ~= element.target_position then
 			element.position = easeInOutQuad( now - element.start_anim_time, element.original_position, element.target_position - element.original_position, ELEMENT_ANIM_TIME )
 		end
@@ -395,6 +419,13 @@ function search()
 		element.start_anim_time = now
 	end
 
+	-- Let the search results slide in
+	for i, element in ipairs( search_results ) do
+		element.target_position = height / 2 - #search_results + i * 2
+
+		element.original_position = element.position
+		element.start_anim_time = now
+	end
 end
 
 --- Return from the search screen
@@ -413,6 +444,16 @@ function back_from_search()
 		element.original_position = element.position
 		element.start_anim_time = now
 	end
+
+	-- Move the search results back down (out of the screen)
+	for i, element in ipairs( search_results ) do
+		element.target_position = height + i * 2
+
+		element.original_position = element.position
+		element.start_anim_time = now
+	end
+
+	selected_search_result = nil
 end
 
 --- Return from the before-launch screen
@@ -531,6 +572,14 @@ for i, element in ipairs( launch_settings ) do
 	end
 end
 
+-- Cook initial search results element positions
+for i, element in ipairs( search_results ) do
+	if not element.target_position then
+		element.target_position = height + i * 2
+		element.position = height + i * 2
+	end
+end
+
 local last_time = os.clock()
 local end_queued = false
 
@@ -564,11 +613,25 @@ while true do
 			menu[ i ].fn()
 
 		elseif state == "play_menu" then
-			-- Check whether we hit a setting element
-			for i, element in ipairs( launch_settings ) do
-				if math.floor( element.position ) == ev[ 4 ] then
-					selected_settings_element = element
-					break
+			if ev[ 3 ] == width and ev[ 4 ] == 1 then
+				-- Secret advanced settings menu!
+
+			else
+				-- Check whether we hit a setting element
+				for i, element in ipairs( launch_settings ) do
+					if math.floor( element.position ) == ev[ 4 ] then
+						selected_settings_element = element
+
+						if element.options then
+							if ev[ 3 ] >= width / 2 and ev[ 3 ] <= width / 2 + 3 then
+								element.value = math.max( 1, element.value - 1 )
+							elseif ev[ 3 ] >= width / 2 then
+								element.value = math.min( #element.options, element.value + 1 )
+							end
+						end
+
+						break
+					end
 				end
 			end
 		end
@@ -630,11 +693,20 @@ while true do
 	background_window.setVisible( true )
 
 	-- Overlay stuff
-	update_settings( now )
-	update_menu( now )
+	update_elements( now, launch_settings )
+	update_elements( now, menu )
+	update_elements( now, search_results )
 	
 	draw_settings()
+	draw_search_results()
 	draw_menu()
+
+	if state == "play_menu" then
+		parent_window.setCursorPos( width, 1 )
+		parent_window.setBackgroundColour( colours.black )
+		parent_window.setTextColour( colours.lightGrey )
+		parent_window.write( secret_menu and "*" or "\7" )
+	end
 
 	parent_window.setVisible( true )
 
