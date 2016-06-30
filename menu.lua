@@ -815,6 +815,8 @@ while true do
 			for i, element in ipairs( search_results ) do
 				if math.floor( element.position ) == ev[ 4 ] and not element.not_clickable then
 					selected_search_result = element
+					selected_game = element.game_ID
+
 					break
 				end
 			end
@@ -889,18 +891,26 @@ while true do
 		if ev[ 3 ] == GAME_CHANNEL then
 			local message = ev[ 5 ]
 
-			if type( message ) == "table" and message.Gravity_Girl == "best game ever" and message.sender ~= myself then
+			if type( message ) == "table" and message.Gravity_Girl == "best game ever" and message.sender and message.sender.ID ~= os.getComputerID() then
 				if message.type == "game_lookup_response" then
 					if message.game_ID and not search_results[ message.game_ID ] then
 						search_results[ message.game_ID ] = true
 
 						search_results[ #search_results + 1 ] = {
-							name = message.sender.name .. "'s game for " .. message.data.max .. " players";
+							name = message.sender.name;
+							connected = message.data.connected;
+							max = message.data.max;
+							game_ID = message.game_ID;
 
-							target_position = state == "search_menu" and height / 2 + #search_results * 2 + 2 or height + #search_results;
-							original_position = height + #search_results;
-							start_anim_time = now;
+							position = height + #search_results;
 						}
+
+						-- Recalculate search results element positions
+						for i, element in ipairs( search_results ) do
+							element.target_position = state == "search_menu" and height / 2 - #search_results + i * 2 or height + i * 2
+							element.original_position = element.position
+							element.start_anim_time = now
+						end
 					end
 				end
 			end
