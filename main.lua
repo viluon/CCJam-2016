@@ -35,6 +35,7 @@ local secret_settings = arguments.secret_settings
 local modem = arguments.modem
 local selected_game = arguments.selected_game
 local local_player = arguments.local_player
+local local_game = arguments.local_game
 
 local furthest_block_generated = -1
 
@@ -358,9 +359,9 @@ while running do
 
 	elseif ev[ 1 ] == "modem_message" then
 		if ev[ 3 ] == GAME_CHANNEL then
-			local message = ev[ 4 ]
+			local message = ev[ 5 ]
 
-			if type( message ) == "table" and message.Gravity_Girl == "best game ever" and message.sender ~= local_player then
+			if type( message ) == "table" and message.Gravity_Girl == "best game ever" and message.sender.ID ~= local_player.ID then
 				if message.game_ID == local_game then
 					if message.type == "player_update" then
 						if players[ message.player_ID ] then
