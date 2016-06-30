@@ -4,6 +4,7 @@
 local arguments = ( { ... } )[ 1 ]
 
 local GAME_CHANNEL = arguments.GAME_CHANNEL
+local ENABLE_LOGGING = arguments.ENABLE_LOGGING
 local PARTICLE_SPACING_VERTICAL = 9
 local PARTICLE_SPACING_HORIZONTAL = 5.9
 local LOADING_HINT_SHOW_TIME = 6
@@ -12,13 +13,14 @@ local SPEED = -30
 arguments.SPEED = SPEED
 
 local directory = fs.getDir( shell.getRunningProgram() )
+local logfile = arguments.logfile
 
 local launch_settings = arguments.launch_settings
 local secret_settings = arguments.secret_settings
 local modem = arguments.modem
 local selected_game = arguments.selected_game
 
-local	launch, setting, randomize_loading_hint, draw_background, update_particles, draw_loading_hint
+local	launch, setting, randomize_loading_hint, draw_background, update_particles, draw_loading_hint, log
 
 local old_term = term.current()
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
@@ -34,7 +36,12 @@ local w, h = term.getSize()
 
 local particles = {}
 
+local local_game = tostring( {} ) .. math.random( 1, 2 ^ 10 )
+arguments.local_game = local_game
+
 local local_player = {
+	ID = os.getComputerID();
+
 	height = 3;
 	width = 2;
 
@@ -75,6 +82,16 @@ function randomize_loading_hint()
 		current_loading_hint = math.random( 1, #loading_hints )
 		c = c + 1
 	end
+end
+
+--- Write to the log file
+-- @param ... The data to write
+-- @return nil
+function log( ... )
+	if not ENABLE_LOGGING then return end
+
+	logfile:write( table.concat( { ... } ) .. "\n" )
+	logfile:flush()
 end
 
 --- Render the background
@@ -198,7 +215,11 @@ while n_players < total_players do
 		end_queued = false
 
 	elseif ev[ 1 ] == "modem_message" then
-		if n_players < setting "Number of Players" then
+		--log( "wait for players received message:", textutils.serialise( ev ) )
+
+		local message = ev[ 5 ]
+
+		if n_players < total_players then
 			if message.type == "game_lookup" then
 				modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
 					Gravity_Girl = "best game ever";
@@ -270,4 +291,5 @@ while n_players < total_players do
 	term.redirect( main_window )
 end
 
+pcall( logfile.close, logfile )
 return launch()
