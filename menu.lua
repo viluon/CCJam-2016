@@ -99,8 +99,8 @@ local logo_colours = { colours.lightBlue, colours.cyan, colours.green, colours.w
 local logo = {
 	"   xxxx                      x    x              xxxx  x         x  ";
 	"  x                               x             x                x  ";
-	"  x  xx  x xx   xxx   x   x  x   xxx   x   x    x  xx  x  x xx   x  ";
-	"  x   x  xx  x     x  x   x  x    x    x   x    x   x  x  xx  x  x  ";
+	"  x      x xx   xxx   x   x  x   xxx   x   x    x      x  x xx   x  ";
+	"  x  xx  xx  x     x  x   x  x    x    x   x    x  xx  x  xx  x  x  ";
 	"  x   x  x      xxxx  x   x  x    x    x   x    x   x  x  x      x  ";
 	"  x   x  x     x   x   x x   x    x     xxxx    x   x  x  x      x  ";
 	"   xxx   x      xxxx    x    x     x       x     xxx   x  x       x ";
@@ -233,9 +233,9 @@ local secret_settings = {
 
 	{
 		name = "Explicit Content";
-		value = 1;
+		value = 2;
 		options = {
-			"Off", "On"
+			"On", "Off"
 		};
 	};
 
@@ -327,7 +327,16 @@ function draw_menu()
 
 	for i, element in ipairs( menu ) do
 		parent_window.setCursorPos( element.position, height / 2 - #menu + i * 2 )
-		parent_window.write( element.name )
+
+		if element.name == "Exit" then
+			if state == "main_menu" then
+				parent_window.write( "Exit" )
+			else
+				parent_window.write( "Back" )
+			end
+		else
+			parent_window.write( element.name )
+		end
 	end
 end
 
@@ -341,7 +350,7 @@ function draw_secret_settings()
 		parent_window.setTextColour( selected and colours.white or colours.lightGrey )
 
 		parent_window.setCursorPos( width / 2 - #element.name, element.position )
-		parent_window.write( element.name .. ": " )
+		parent_window.write( element.name .. "\7: " )
 
 		if element.options then
 			parent_window.setTextColour( element.value == 1 and colours.grey or colours.lightGrey )
