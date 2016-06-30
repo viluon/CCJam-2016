@@ -104,7 +104,7 @@ local logo_colour = colours.grey
 local logo_coloured = false
 local logo_start_redraw_time = os.clock()
 
-local logo_colours = { colours.lightBlue, colours.cyan, colours.green, colours.white, colours.red, colours.magenta }
+local logo_colours = { colours.lightBlue, colours.cyan, colours.green, colours.red, colours.magenta }
 
 local logo = {
 	"   xxxx                      x    x              xxxx  x         x  ";
