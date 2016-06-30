@@ -27,12 +27,14 @@ local ELEMENT_ANIM_TIME = 0.8
 local LOGO_REDRAW_TIME = 0.8
 local SCAN_INTERVAL = 1
 local GAME_CHANNEL = 72
+local ENABLE_LOGGING = true
 
 local math = math
 local term = term
 
 local actual_term = term.current()
 local directory = fs.getDir( shell.getRunningProgram() )
+local logfile = io.open( "/menu_log.txt", "a" )
 
 local capture
 local old_term
@@ -75,7 +77,7 @@ old_term = {
 }
 
 local	random_fill, draw_menu, launch, play, back_from_play, easeInOutQuad, update_elements, draw_settings, search, redraw_logo,
-		randomize_logo_colour, draw_search_results, back_from_search, hide_secrets, scan_for_games
+		randomize_logo_colour, draw_search_results, back_from_search, hide_secrets, scan_for_games, log
 
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
 local main_window = blittle.createWindow( parent_window )
@@ -87,6 +89,10 @@ local width, height = parent_window.getSize()
 local modem = peripheral.find( "modem", function( name, object )
 	return object.isWireless()
 end )
+
+if modem then
+	modem.open( GAME_CHANNEL )
+end
 
 local state = "main_menu"
 local secret_menu
@@ -134,7 +140,7 @@ local menu = {
 	{
 		name = "Join";
 		fn = function()
-			if state == "search_menu" and modem then
+			if state == "search_menu" and modem and selected_search_result then
 				return launch()
 			elseif state == "main_menu" then
 				return search()
@@ -323,6 +329,16 @@ function randomize_logo_colour()
 	end
 end
 
+--- Write to the log file
+-- @param ... The data to write
+-- @return nil
+function log( ... )
+	if not ENABLE_LOGGING then return end
+
+	logfile:write( table.concat( { ... } ) .. "\n" )
+	logfile:flush()
+end
+
 --- Draw the menu elements
 -- @return nil
 function draw_menu()
@@ -425,8 +441,8 @@ function draw_search_results()
 	for i, element in ipairs( search_results ) do
 		local selected = element == selected_search_result
 
-		parent_window.setBackgroundColour( colours.black )
-		parent_window.setTextColour( colours.white )
+		parent_window.setBackgroundColour( selected and colours.white or colours.black )
+		parent_window.setTextColour( selected and colours.grey or colours.white )
 
 		parent_window.setCursorPos( width / 2 - #element.name / 2, element.position )
 		parent_window.write( element.name )
@@ -437,7 +453,8 @@ end
 -- @param now The current time
 -- @return nil
 function scan_for_games( now )
-	if modem and now - last_scan > SCAN_INTERVAL then
+	if modem and ( now - last_scan > SCAN_INTERVAL ) then
+		--log "send"
 		modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
 			Gravity_Girl = "best game ever";
 			type = "game_lookup";
@@ -613,6 +630,8 @@ function launch()
 		modem = modem;
 		selected_game = selected_game;
 		GAME_CHANNEL = GAME_CHANNEL;
+		ENABLE_LOGGING = ENABLE_LOGGING;
+		logfile = logfile;
 	} )
 
 	if not ok then
@@ -790,6 +809,15 @@ while true do
 					end
 				end
 			end
+
+		elseif state == "search_menu" then
+			-- Check whether we hit a search result entry
+			for i, element in ipairs( search_results ) do
+				if math.floor( element.position ) == ev[ 4 ] and not element.not_clickable then
+					selected_search_result = element
+					break
+				end
+			end
 		end
 
 	elseif ev[ 1 ] == "key" then
@@ -856,19 +884,21 @@ while true do
 		end
 
 	elseif ev[ 1 ] == "modem_message" then
+		--log( "menu received message:", textutils.serialise( ev ) )
+
 		if ev[ 3 ] == GAME_CHANNEL then
-			local message = ev[ 4 ]
+			local message = ev[ 5 ]
 
 			if type( message ) == "table" and message.Gravity_Girl == "best game ever" and message.sender ~= myself then
 				if message.type == "game_lookup_response" then
-					if not search_results[ message.game_ID ] then
+					if message.game_ID and not search_results[ message.game_ID ] then
 						search_results[ message.game_ID ] = true
 
 						search_results[ #search_results + 1 ] = {
-							name = message.sender.name;
+							name = message.sender.name .. "'s game for " .. message.data.max .. " players";
 
-							target_position = height / 2 - #search_results + 1 + i * 2;
-							original_position = height;
+							target_position = state == "search_menu" and height / 2 + #search_results * 2 + 2 or height + #search_results;
+							original_position = height + #search_results;
 							start_anim_time = now;
 						}
 					end
@@ -908,6 +938,7 @@ while true do
 	last_time = now
 end
 
+logfile:close()
+
 term.redirect( old_term )
 term.setCursorPos( 1, 1 )
-
