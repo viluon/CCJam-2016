@@ -1,0 +1,8 @@
+( function()
+	return {
+		"Loading hints make for the illusion that something is going on in the background.";
+		"This loading screen was originally supposed to feature sketches of the game. Later it was discovered that there actually are no sketches.";
+		"The first versions of Gravity Girl included plans for a complex rendering engine that would make animations from static pictures.";
+		"All levels in Gravity Girl are procedurally generated and do *not* have ends.";
+	}
+end )()
