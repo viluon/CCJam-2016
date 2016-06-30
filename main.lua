@@ -20,7 +20,7 @@ local old_term = term.current()
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
 local main_window = blittle.createWindow( parent_window, nil, nil, nil, nil, false )
 
-local	draw, draw_player, update_player, round, log, deepcopy
+local	draw, draw_player, update_player, round, log, deepcopy, draw_background
 
 local condition
 
@@ -82,9 +82,13 @@ local second_player = {
 
 local level = {}
 local segments = {}
+local backgrounds = {}
 
-local directory = fs.getDir( shell.getRunningProgram() ) .. "/level_segments/"
-for i, name in ipairs( fs.list( directory ) ) do
+local directory = fs.getDir( shell.getRunningProgram() )
+local segments_dir = directory .. "/level_segments/"
+local backgrounds_dir = directory .. "/backgrounds/"
+
+for i, name in ipairs( fs.list( segments_dir ) ) do
 	local f = io.open( directory .. name, "r" )
 	local contents = f:read( "*a" )
 	f:close()
@@ -140,7 +144,7 @@ local last_segment = starter
 };
 --]]
 
-local players = { local_player, second_player }
+local players = { local_player }
 
 --- Write to the log file
 -- @param ... The data to write
@@ -231,12 +235,24 @@ function update_player( player, dt )
 	end
 end
 
+--- Render the backgrounds
+-- @return nil
+function draw_background()
+	local x = 0
+	for i, bg in ipairs( backgrounds ) do
+		paintutils.drawImage( bg.data, camera_offset.x + x, 1 )
+		x = x + bg.width
+	end
+end
+
 --- Render the view
 -- @return nil
 function draw()
 	-- Draw the background
 	term.setBackgroundColor( colours.lightBlue )
 	term.clear()
+
+	draw_background()
 
 	-- Draw the level
 	for i, obj in ipairs( level ) do
