@@ -20,7 +20,7 @@ local old_term = term.current()
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
 local main_window = blittle.createWindow( parent_window, nil, nil, nil, nil, false )
 
-local	draw, draw_player, update_player, round, log, deepcopy, draw_background
+local	draw, draw_player, update_player, round, log, deepcopy, draw_background, setting
 
 local condition
 
@@ -31,7 +31,8 @@ local world = bump.newWorld()
 
 local launch_settings = arguments[ 1 ]
 local secret_settings = arguments[ 2 ]
-local join_game = arguments[ 3 ]
+local modem = arguments[ 3 ]
+local join_game = arguments[ 4 ]
 
 local furthest_block_generated = -1
 
@@ -89,7 +90,7 @@ local segments_dir = directory .. "/level_segments/"
 local backgrounds_dir = directory .. "/backgrounds/"
 
 for i, name in ipairs( fs.list( segments_dir ) ) do
-	local f = io.open( directory .. name, "r" )
+	local f = io.open( segments_dir .. name, "r" )
 	local contents = f:read( "*a" )
 	f:close()
 
@@ -178,6 +179,25 @@ end
 function round( n, places )
 	local mult = 10 ^ ( places or 0 )
 	return math.floor( n * mult + 0.5 ) / mult
+end
+
+--- Get the value of a setting by name
+-- @param name	The name of the setting to search for
+-- @return any	The value of the setting, either a string when it's a string setting,
+--				or the value of the setting's options table at the index of setting.value.
+--				Errors when the setting wasn't found.
+function setting( name )
+	for i, setting in ipairs( launch_settings ) do
+		if setting.name:lower() == name:lower() then
+			if setting.options then
+				return setting.options[ setting.value ]
+			else
+				return setting.value
+			end
+		end
+	end
+
+	error( "No setting of name '" .. name .. "' was found.", 2 )
 end
 
 --- Draw a player
@@ -305,8 +325,19 @@ while running do
 	local dt = now - last_time
 
 	if ev[ 1 ] == "key" then
-		if ev[ 2 ] == keys.space and players[ 1 ].can_switch then
-			players[ 1 ].speed = -players[ 1 ].speed
+		if ev[ 2 ] == keys.space and local_player.can_switch then
+			local_player.speed = -local_player.speed
+
+			if broadcast then
+				modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+					Gravity_Girl = "best game ever";
+					type = "player_update";
+
+					game_ID = local_game;
+					sender = local_player;
+					data = local_player;
+				} )
+			end
 
 		elseif ev[ 2 ] == keys.rightShift and players[ 2 ].can_switch then
 			players[ 2 ].speed = -players[ 2 ].speed
@@ -322,45 +353,77 @@ while running do
 
 	elseif ev[ 1 ] == "end" then
 		end_queued = false
-	end
 
-	-- Generate environment
-	while furthest_block_generated < w - camera_offset.x do
-		local possible_follow_ups = {}
+	elseif ev[ 1 ] == "modem_message" then
+		if ev[ 3 ] == GAME_CHANNEL then
+			local message = ev[ 4 ]
 
-		for _, segment_type in ipairs( last_segment.follow_up ) do
-			for i, segment in ipairs( segments ) do
-				if segment.type == segment_type and not possible_follow_ups[ segment ] then
-					possible_follow_ups[ segment ] = true
-					possible_follow_ups[ #possible_follow_ups + 1 ] = segment
+			if type( message ) == "table" and message.Gravity_Girl == "best game ever" and message.sender ~= local_player then
+				if message.game_ID == local_game then
+					if message.type == "player_update" then
+						if players[ message.player_ID ] then
+							players[ message.player_ID ] = message.data
+						end
+
+					elseif message.type == "world_update_add" then
+						world:add( message.data, message.data.x, message.data.y, message.data.width, message.data.height )
+						level[ #level + 1 ] = message.data
+					end
 				end
 			end
 		end
+	end
 
-		local follow_up = possible_follow_ups[ math.random( 1, #possible_follow_ups ) ]
+	if not join_game then
+		-- Generate environment
+		while furthest_block_generated < w - camera_offset.x do
+			local possible_follow_ups = {}
 
-		for i, obj in ipairs( follow_up ) do
-			local obj = deepcopy( obj )
-			obj.x = obj.x + furthest_block_generated
+			for _, segment_type in ipairs( last_segment.follow_up ) do
+				for i, segment in ipairs( segments ) do
+					if segment.type == segment_type and not possible_follow_ups[ segment ] then
+						possible_follow_ups[ segment ] = true
+						possible_follow_ups[ #possible_follow_ups + 1 ] = segment
+					end
+				end
+			end
 
-			world:add( obj, obj.x, obj.y, obj.width, obj.height )
-			level[ #level + 1 ] = obj
+			local follow_up = possible_follow_ups[ math.random( 1, #possible_follow_ups ) ]
+
+			for i, obj in ipairs( follow_up ) do
+				local obj = deepcopy( obj )
+				obj.x = obj.x + furthest_block_generated
+
+				if broadcast then
+					modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+						Gravity_Girl = "best game ever";
+						type = "world_update_add";
+
+						game_ID = local_game;
+						sender = local_player;
+						data = obj;
+					} )
+				end
+
+				world:add( obj, obj.x, obj.y, obj.width, obj.height )
+				level[ #level + 1 ] = obj
+			end
+
+			furthest_block_generated = furthest_block_generated + follow_up.total_width
+			last_segment = follow_up
 		end
-
-		furthest_block_generated = furthest_block_generated + follow_up.total_width
-		last_segment = follow_up
 	end
 
 	-- Update players
 	local furthest_right = -1
-	local everyone_dead = true
+	local alive = 0
 
-	for i, player in ipairs( players ) do
+	for i, player in pairs( players ) do
 		update_player( player, dt )
 		furthest_right = math.max( furthest_right, player.position.x )
 
 		if not player.dead then
-			everyone_dead = false
+			alive = alive + 1
 		end
 	end
 
