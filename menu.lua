@@ -25,6 +25,8 @@ if not blittle then os.loadAPI "blittle" end
 local MENU_ANIM_TIME = 0.8
 local ELEMENT_ANIM_TIME = 0.8
 local LOGO_REDRAW_TIME = 0.8
+local SCAN_INTERVAL = 1
+local GAME_CHANNEL = 72
 
 local math = math
 local term = term
@@ -73,7 +75,7 @@ old_term = {
 }
 
 local	random_fill, draw_menu, launch, play, back_from_play, easeInOutQuad, update_elements, draw_settings, search, redraw_logo,
-		randomize_logo_colour, draw_search_results, back_from_search, hide_secrets
+		randomize_logo_colour, draw_search_results, back_from_search, hide_secrets, scan_for_games
 
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
 local main_window = blittle.createWindow( parent_window )
@@ -89,6 +91,8 @@ end )
 local state = "main_menu"
 local secret_menu
 local selected_game
+
+local last_scan = -1
 
 local logo_colour = colours.grey
 local logo_coloured = false
@@ -429,6 +433,22 @@ function draw_search_results()
 	end
 end
 
+--- Scan for existing games nearby
+-- @param now The current time
+-- @return nil
+function scan_for_games( now )
+	if modem and now - last_scan > SCAN_INTERVAL then
+		modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+			Gravity_Girl = "best game ever";
+			type = "game_lookup";
+
+			sender = local_player;
+			} )
+
+		last_scan = now
+	end
+end
+
 --- Update elements of tbl
 -- @param now The current time
 -- @param tbl Table to update
@@ -587,7 +607,13 @@ function launch()
 	setfenv( fn, getfenv() )
 
 	term.redirect( old_term )
-	local ok, err = pcall( fn, launch_settings, secret_settings, modem, selected_game )
+	local ok, err = pcall( fn, {
+		launch_settings = launch_settings;
+		secret_settings = secret_settings;
+		modem = modem;
+		selected_game = selected_game;
+		GAME_CHANNEL = GAME_CHANNEL;
+	} )
 
 	if not ok then
 		term.redirect( actual_term )
@@ -828,7 +854,30 @@ while true do
 			hide_secrets( now )
 			menu[ #menu ].fn()
 		end
+
+	elseif ev[ 1 ] == "modem_message" then
+		if ev[ 3 ] == GAME_CHANNEL then
+			local message = ev[ 4 ]
+
+			if type( message ) == "table" and message.Gravity_Girl == "best game ever" and message.sender ~= myself then
+				if message.type == "game_lookup_response" then
+					if not search_results[ message.game_ID ] then
+						search_results[ message.game_ID ] = true
+
+						search_results[ #search_results + 1 ] = {
+							name = message.sender.name;
+
+							target_position = height / 2 - #search_results + 1 + i * 2;
+							original_position = height;
+							start_anim_time = now;
+						}
+					end
+				end
+			end
+		end
 	end
+
+	scan_for_games( now )
 
 	random_fill()
 	redraw_logo( now )
