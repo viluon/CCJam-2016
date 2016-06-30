@@ -572,14 +572,14 @@ function back_from_play()
 	selected_settings_element = nil
 end
 
---- Launch the game
+--- Pass execution to wait for players script
 -- @return nil
 function launch()
-	local f = io.open( directory .. "/main.lua", "r" )
+	local f = io.open( directory .. "/wait_for_players.lua", "r" )
 	local contents = f:read( "*a" )
 	f:close()
 
-	local fn, err = loadstring( contents, "main.lua" )
+	local fn, err = loadstring( contents, "wait_for_players.lua" )
 	if not fn then
 		error( err, 0 )
 	end
@@ -587,7 +587,7 @@ function launch()
 	setfenv( fn, getfenv() )
 
 	term.redirect( old_term )
-	local ok, err = pcall( fn, launch_settings, secret_settings, selected_game )
+	local ok, err = pcall( fn, launch_settings, secret_settings, modem, selected_game )
 
 	if not ok then
 		term.redirect( actual_term )
@@ -615,8 +615,8 @@ function launch()
 
 		term.setBackgroundColour( colours.white )
 		term.setTextColour( colours.black )
-		term.setCursorPos( width / 2 - #err / 2, y + 2 )
-		term.write( err )
+		term.setCursorPos( 1, y + 2 )
+		print( err )
 
 		read()
 
@@ -772,9 +772,6 @@ while true do
 				if type( selected_settings_element.value ) == "string" and #selected_settings_element.value > 0 then
 					selected_settings_element.value = selected_settings_element.value:sub( 1, -2 )
 				end
-
-			elseif ev[ 2 ] == keys.enter then
-				selected_settings_element = nil
 			
 			elseif ev[ 2 ] == keys.left then
 				if selected_settings_element.options then
@@ -803,6 +800,22 @@ while true do
 						break
 					end
 				end
+			end
+		end
+		
+		if ev[ 2 ] == keys.enter then
+			if secret_menu then
+				selected_secret_settings_element = nil
+
+			elseif state == "play_menu" then
+				if selected_settings_element then
+					selected_settings_element = nil
+				else
+					launch()
+				end
+
+			elseif state == "main_menu" then
+				play()
 			end
 		end
 
