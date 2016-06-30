@@ -1,18 +1,22 @@
 
 -- Gravity Girl, a Gravity Guy clone by @viluon
 
+local arguments = ( { ... } )[ 1 ]
+
+local GAME_CHANNEL = arguments.GAME_CHANNEL
 local PARTICLE_SPACING_VERTICAL = 9
 local PARTICLE_SPACING_HORIZONTAL = 5.9
 local LOADING_HINT_SHOW_TIME = 6
+local SPEED = -30
+
+arguments.SPEED = SPEED
 
 local directory = fs.getDir( shell.getRunningProgram() )
 
-local arguments = { ... }
-
-local launch_settings = arguments[ 1 ]
-local secret_settings = arguments[ 2 ]
-local modem = arguments[ 3 ]
-local join_game = arguments[ 4 ]
+local launch_settings = arguments.launch_settings
+local secret_settings = arguments.secret_settings
+local modem = arguments.modem
+local selected_game = arguments.selected_game
 
 local	launch, setting, randomize_loading_hint, draw_background, update_particles, draw_loading_hint
 
@@ -29,8 +33,31 @@ term.redirect( main_window )
 local w, h = term.getSize()
 
 local particles = {}
-local players = {}
-local n_players = 0
+
+local local_player = {
+	height = 3;
+	width = 2;
+
+	name = launch_settings[ 2 ].value;
+	colour = launch_settings[ 3 ].options[ launch_settings[ 3 ].value ] or colours.blue;
+
+	velocity = {
+		x = 0;
+		y = 0;
+	};
+	
+	position = {
+		x = 12;
+		y = h / 2;
+	};
+
+	speed = SPEED;
+}
+
+local players = { local_player }
+local n_players = 1
+arguments.local_player = local_player
+arguments.players = players
 
 local f = io.open( directory .. "/loading_hints.tbl", "r" )
 local contents = f:read( "*a" )
@@ -115,7 +142,7 @@ function launch()
 
 	term.redirect( old_term )
 
-	return fn( unpack( arguments ) )
+	return fn( arguments )
 end
 
 --- Get the value of a setting by name
@@ -153,7 +180,7 @@ local running = true
 
 local total_players = setting "Number of Players"
 
-while n_players < total_players - 1 do
+while n_players < total_players do
 	parent_window.setVisible( false )
 	hint_window.setVisible( true )
 	main_window.setVisible( false )
@@ -175,10 +202,14 @@ while n_players < total_players - 1 do
 			if message.type == "game_lookup" then
 				modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
 					Gravity_Girl = "best game ever";
-					type = "lookup_response";
+					type = "game_lookup_response";
 
 					game_ID = local_game;
 					sender = local_player;
+					data = {
+						connected = n_players;
+						max = total_players;
+					};
 				} )
 
 			elseif message.type == "game_join" then
@@ -208,20 +239,27 @@ while n_players < total_players - 1 do
 	-- Overlay stuff
 	term.redirect( parent_window )
 
+	local text = "(" .. n_players .. "/" .. total_players .. ")"
+
 	term.setBackgroundColour( colours.black )
+	term.setTextColour( colours.lightGrey )
+	term.setCursorPos( width / 2 - #text / 2, 3 )
+	term.write( text )
+
 	term.setTextColour( colours.white )
 	term.setCursorPos( width / 2 - #heading / 2, 2 )
 	term.write( heading )
 
-	local text = "(" .. n_players + 1 .. "/" .. total_players .. ")"
-	term.setCursorPos( width / 2 - #text / 2, 3 )
-	term.write( text )
-
 	-- List connected players
 	local c = 0
 	for id, player in pairs( players ) do
-		term.setCursorPos( 2, 4 + c )
+		term.setBackgroundColour( colours.black )
+		term.setCursorPos( 0.15 * width, 5 + c )
 		term.write( player.name )
+
+		term.setCursorPos( 0.85 * width, 5 + c )
+		term.setBackgroundColour( player.colour )
+		term.write( "  " )
 		c = c + 1
 	end
 
