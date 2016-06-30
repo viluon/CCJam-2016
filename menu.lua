@@ -30,6 +30,7 @@ local math = math
 local term = term
 
 local actual_term = term.current()
+local directory = fs.getDir( shell.getRunningProgram() )
 
 local capture
 local old_term
@@ -439,7 +440,7 @@ function hide_secrets( now )
 
 	-- Return the elements back off-screen
 	for i, element in ipairs( secret_settings ) do
-		element.target_position = -i * 2
+		element.target_position = -#secret_settings * 2 + i * 2 - 1
 
 		element.original_position = element.position
 		element.start_anim_time = now
@@ -565,7 +566,7 @@ end
 --- Launch the game
 -- @return nil
 function launch()
-	local f = io.open( "main.lua", "r" )
+	local f = io.open( directory .. "/main.lua", "r" )
 	local contents = f:read( "*a" )
 	f:close()
 
@@ -661,8 +662,8 @@ end
 -- Cook initial secret settings element positions
 for i, element in ipairs( secret_settings ) do
 	if not element.target_position then
-		element.target_position = -i * 2
-		element.position = -i * 2
+		element.target_position = -#secret_settings * 2 + i * 2 - 1
+		element.position = -#secret_settings * 2 + i * 2 - 1
 	end
 end
 
@@ -802,6 +803,7 @@ while true do
 
 		elseif ev[ 2 ] == "q" then
 			--WARN: Hard link!
+			hide_secrets( now )
 			menu[ #menu ].fn()
 		end
 	end
