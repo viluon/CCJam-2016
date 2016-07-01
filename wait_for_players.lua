@@ -12,6 +12,7 @@ local GAME_INFO_REQUEST_INTERVAL = 2
 local PLAYER_PING_INTERVAL = 2
 local PLAYER_TIMEOUT = 4
 local SERVER_TIMEOUT = 3
+local PREGAME_COUNTDOWN_LENGTH = 5
 local SPEED = -30
 
 arguments.SPEED = SPEED
@@ -63,9 +64,11 @@ local local_player = {
 	speed = SPEED;
 }
 
-local players = { local_player }
+local players = {}
 local n_players = selected_game and selected_game.connected + 1 or 1
 local total_players
+
+players[ os.getComputerID() ] = local_player
 
 arguments.local_player = local_player
 arguments.players = players
@@ -265,14 +268,14 @@ end
 
 local heading = "Waiting for Players"
 
+total_players = selected_game and selected_game.max or setting "Number of Players"
+
 local loading_hint_changed = -1
 local last_time = os.clock()
 local end_queued = false
 local running = true
-local time_left = 5
+local time_left = total_players > 1 and PREGAME_COUNTDOWN_LENGTH or 0
 local last_seen_server = last_time
-
-total_players = selected_game and selected_game.max or setting "Number of Players"
 
 while n_players < total_players do
 	parent_window.setVisible( false )
