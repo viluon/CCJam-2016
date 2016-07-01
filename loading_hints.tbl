@@ -4,5 +4,6 @@
 		"This loading screen was originally supposed to feature sketches of the game. Later it was discovered that there actually are no sketches.";
 		"The first versions of Gravity Girl included plans for a complex rendering engine that would make animations from static pictures.";
 		"All levels in Gravity Girl are procedurally generated and do *not* have ends.";
+		"All names, characters, and incidents portrayed in this game are fictitious. No identification with actual persons, places, buildings, and products is intended.";
 	}
 end )()
