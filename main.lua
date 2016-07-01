@@ -397,6 +397,9 @@ for i, name in ipairs( fs.list( backgrounds_dir ) ) do
 end
 
 -- Place players at their appropriate spawn locations
+log( "Starter is " )
+log( textutils.serialise( starter ) )
+
 local index
 for i, position in ipairs( starter.player_positions ) do
 	index = next( players, index )
