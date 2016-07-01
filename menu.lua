@@ -933,6 +933,21 @@ while true do
 
 			elseif state == "main_menu" then
 				play()
+
+			elseif state == "search_menu" then
+				local selection_exists = false
+
+				-- Check that the search result actually exists
+				for i, element in ipairs( search_results ) do
+					if element == selected_search_result then
+						selection_exists = true
+						break
+					end
+				end
+
+				if selection_exists then
+					return launch()
+				end
 			end
 		end
 
