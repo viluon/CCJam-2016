@@ -241,7 +241,7 @@ if not modem then
 	}
 else
 	search_results[ 1 ] = {
-		name = "Author| Players";
+		name = "Host| Players";
 		not_clickable = true;
 	}
 end
