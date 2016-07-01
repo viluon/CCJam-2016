@@ -22,7 +22,8 @@ local old_term = term.current()
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
 local main_window = blittle.createWindow( parent_window, nil, nil, nil, nil, false )
 
-local	draw, draw_player, update_player, round, log, deepcopy, draw_background, setting, refresh_players, convert_image, draw_image
+local	draw, draw_player, update_player, round, log, deepcopy, draw_background, setting, refresh_players, convert_image, draw_image, update_level,
+		update_backgrounds
 
 local local_player
 
@@ -257,6 +258,50 @@ function draw_object( obj )
 	end
 end
 
+--- Remove off-screen blocks
+-- @return nil
+function update_level()
+	local to_remove = {}
+
+	for i, obj in ipairs( level ) do
+		if obj.x + obj.width + camera_offset.x < 1 then
+			to_remove[ #to_remove + 1 ] = obj
+		end
+	end
+
+	for _, obj in ipairs( to_remove ) do
+		for i, object in ipairs( level ) do
+			if object == obj then
+				world:remove( object )
+				table.remove( level, i )
+
+				break
+			end
+		end
+	end
+end
+
+--- Remove off-screen backgrounds
+-- @return nil
+function update_backgrounds()
+	local to_remove = {}
+
+	for i, bg in ipairs( active_backgrounds ) do
+		if bg.pos + bg.width + camera_offset.x < 1 then
+			to_remove[ #to_remove + 1 ] = bg
+		end
+	end
+
+	for _, bg in ipairs( to_remove ) do
+		for i, background in ipairs( active_backgrounds ) do
+			if background == bg then
+				table.remove( active_backgrounds, i )
+				break
+			end
+		end
+	end
+end
+
 --- Update a player
 -- @param player The player to update
 -- @tparam number dt Delta time, time passed since last update
@@ -458,8 +503,6 @@ while running do
 	end
 
 	if broadcast then
-		--refresh_players( now )
-
 		-- Generate environment
 		while furthest_block_generated < w - camera_offset.x do
 			local possible_follow_ups = {}
@@ -539,6 +582,12 @@ while running do
 	if furthest_right + camera_offset.x > ( 2 / 3 ) * w then
 		camera_offset.x = ( 2 / 3 ) * w - furthest_right
 	end
+
+	-- Remove off-screen blocks
+	update_level()
+
+	-- Remove off-screen backgrounds
+	update_backgrounds()
 
 	draw()
 
