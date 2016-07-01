@@ -105,7 +105,7 @@ local logo_colour = colours.grey
 local logo_coloured = false
 local logo_start_redraw_time = os.clock()
 
-local logo_colours = { colours.lightBlue, colours.cyan, colours.green, colours.red, colours.magenta }
+local logo_colours = { colours.lightBlue, colours.yellow, colours.cyan, colours.green, colours.red, colours.magenta }
 
 local logo = {
 	"   xxxx                      x    x              xxxx  x         x  ";
@@ -245,7 +245,7 @@ local launch_settings = {
 		name = "Player Colour";
 		value = 1;
 		options = {
-			colours.red, colours.green, colours.blue, colours.lightBlue, colours.cyan, colours.magenta
+			colours.red, colours.green, colours.blue, colours.lightBlue, colours.yellow, colours.cyan, colours.magenta
 		};
 
 		type = "colour";
