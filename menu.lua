@@ -201,7 +201,7 @@ local launch_settings = {
 		name = "Player Colour";
 		value = 1;
 		options = {
-			colours.red, colours.green, colours.blue, colours.lightBlue, colours.yellow, colours.cyan, colours.magenta
+			colours.red, colours.green, colours.blue, colours.yellow, colours.cyan, colours.magenta
 		};
 
 		type = "colour";
@@ -420,7 +420,7 @@ function draw_search_results()
 
 			parent_window.setCursorPos( width / 2 + 3, element.position )
 			parent_window.write( element.game_details.connected .. "/" .. element.game_details.max )
-			
+
 		elseif #search_results == 1 then
 			local text = "Searching for games..."
 
