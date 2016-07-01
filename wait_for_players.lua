@@ -36,9 +36,6 @@ local w, h = term.getSize()
 
 local particles = {}
 
-local local_game = tostring( {} ) .. math.random( 1, 2 ^ 10 )
-arguments.local_game = local_game
-
 local local_player = {
 	ID = os.getComputerID();
 
@@ -65,6 +62,23 @@ local players = { local_player }
 local n_players = 1
 arguments.local_player = local_player
 arguments.players = players
+
+local local_game
+
+if not arguments.selected_game then
+	local_game = tostring( {} ) .. math.random( 1, 2 ^ 10 )
+	arguments.local_game = local_game
+else
+	local_game = arguments.selected_game
+	modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+		Gravity_Girl = "best game ever";
+		type = "game_join";
+
+		game_ID = local_game;
+		sender = local_player;
+		data = local_player;
+	} )
+end
 
 local f = io.open( directory .. "/loading_hints.tbl", "r" )
 local contents = f:read( "*a" )
@@ -234,7 +248,7 @@ while n_players < total_players do
 				} )
 
 			elseif message.type == "game_join" then
-				players[ message.data.player_ID ] = message.data
+				players[ message.data.ID ] = message.data
 				n_players = n_players + 1
 			end
 		end
