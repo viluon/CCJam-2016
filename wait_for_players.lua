@@ -232,6 +232,8 @@ function launch()
 
 	term.redirect( old_term )
 
+	arguments.n_players = n_players
+	
 	return fn( arguments )
 end
 
