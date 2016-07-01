@@ -102,5 +102,6 @@
 
 		type = "bottom";
 		follow_up = { "top" };
+		background = { "cloudy_skies" };
 	}
 end )()

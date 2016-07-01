@@ -19,5 +19,6 @@
 
 		type = "top";
 		follow_up = { "top", "bottom" };
+		background = { "dark_wires" };
 	}
 end )()

@@ -22,9 +22,9 @@ local old_term = term.current()
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
 local main_window = blittle.createWindow( parent_window, nil, nil, nil, nil, false )
 
-local	draw, draw_player, update_player, round, log, deepcopy, draw_background, setting, refresh_players
+local	draw, draw_player, update_player, round, log, deepcopy, draw_background, setting, refresh_players, convert_image, draw_image
 
-local condition
+local local_player
 
 term.redirect( main_window )
 local w, h = term.getSize()
@@ -35,7 +35,6 @@ local launch_settings = arguments.launch_settings
 local secret_settings = arguments.secret_settings
 local modem = arguments.modem
 local selected_game = arguments.selected_game
-local local_player = arguments.local_player
 local local_game = arguments.local_game
 
 local broadcast = not selected_game
@@ -47,13 +46,18 @@ local camera_offset = {
 	y = 0;
 }
 
+local colour_lookup = {}
+for n = 1, 16 do
+    colour_lookup[ 2 ^ ( n - 1 ) ] = string.sub( "0123456789abcdef", n, n )
+end
+
 local level = {}
 local segments = {}
 local backgrounds = {}
+local active_backgrounds = {}
 
 local directory = fs.getDir( shell.getRunningProgram() )
 local segments_dir = directory .. "/level_segments/"
-local backgrounds_dir = directory .. "/backgrounds/"
 
 for i, name in ipairs( fs.list( segments_dir ) ) do
 	local f = io.open( segments_dir .. name, "r" )
@@ -70,6 +74,8 @@ for i, name in ipairs( fs.list( segments_dir ) ) do
 
 	segments[ i ].total_width = max_width
 end
+
+local backgrounds_dir = directory .. "/backgrounds/"
 
 local starters = {}
 local starter
@@ -121,6 +127,7 @@ local last_segment = starter
 
 local players = arguments.players
 local n_players = arguments.n_players
+local_player = players[ os.getComputerID() ]
 
 --- Write to the log file
 -- @param ... The data to write
@@ -193,6 +200,39 @@ function refresh_players( now )
 	end
 end
 
+--- Convert a paintutils image to a smarter format
+-- @param image The paintutils image to convert
+-- @return Array of lines of hexadecimal characters, to be used with term.blit
+function convert_image( image )
+	local res = {}
+
+	for y, row in ipairs( image ) do
+		local line = ""
+
+		for x, pixel in ipairs( row ) do
+			line = line .. colour_lookup[ pixel ]
+		end
+
+		res[ y ] = line
+	end
+
+	return res
+end
+
+--- Draw a converted paintutils image
+-- @param image The image to draw
+-- @param x The x coordinate to draw at
+-- @param y The y coordinate to draw at
+-- @return nil
+function draw_image( image, x, y )
+	local t, tc = string.rep( " ", #image[ 1 ] ), string.rep( "0", #image[ 1 ] )
+
+	for i, row in ipairs( image ) do
+		term.setCursorPos( x, y + i - 1 )
+		term.blit( t, tc, row )
+	end
+end
+
 --- Draw a player
 -- @param player The player to draw
 -- @return nil
@@ -251,10 +291,14 @@ end
 --- Render the backgrounds
 -- @return nil
 function draw_background()
-	local x = 0
-	for i, bg in ipairs( backgrounds ) do
-		paintutils.drawImage( bg.data, camera_offset.x + x, 1 )
-		x = x + bg.width
+	for bg_x, bg in pairs( active_backgrounds ) do
+		local this_x = round( camera_offset.x + bg_x )
+
+		if this_x + bg.width > 0 then
+			for y = 1, bg.height and h or 1, bg.height or 1 do
+				draw_image( bg.data, this_x, y )
+			end
+		end
 	end
 end
 
@@ -278,6 +322,23 @@ function draw()
 	end
 end
 
+-- Load backgrounds
+for i, name in ipairs( fs.list( backgrounds_dir ) ) do
+	if name:find( "^.*%.bg$" ) then
+		local f = io.open( backgrounds_dir .. name, "r" )
+		local contents = f:read( "*a" )
+		f:close()
+
+		local info = textutils.unserialise( contents )
+
+		backgrounds[ name:gsub( "%.bg$", "" ) ] = {
+			data = convert_image( paintutils.loadImage( shell.resolve( backgrounds_dir .. info.path ) ) );
+			width = info.width;
+			height = info.height;
+		}
+	end
+end
+
 -- Place players at their appropriate spawn locations
 local index
 for i, position in ipairs( starter.player_positions ) do
@@ -290,7 +351,7 @@ for i, position in ipairs( starter.player_positions ) do
 end
 
 -- Register the players for collision detection
-for i, player in pairs( players ) do
+for id, player in pairs( players ) do
 	world:add( player.ID, player.position.x, player.position.y, player.width, player.height )
 end
 
@@ -376,6 +437,9 @@ while running do
 					elseif message.type == "world_update_add" then
 						world:add( message.data, message.data.x, message.data.y, message.data.width, message.data.height )
 						level[ #level + 1 ] = message.data
+
+					elseif message.type == "background_add" then
+						active_backgrounds[ message.pos ] = message.data
 					end
 				end
 			end
@@ -389,6 +453,7 @@ while running do
 		while furthest_block_generated < w - camera_offset.x do
 			local possible_follow_ups = {}
 
+			-- Find suitable segments
 			for _, segment_type in ipairs( last_segment.follow_up ) do
 				for i, segment in ipairs( segments ) do
 					if segment.type == segment_type and not possible_follow_ups[ segment ] then
@@ -398,8 +463,10 @@ while running do
 				end
 			end
 
+			-- Randomly choose the next segment
 			local follow_up = possible_follow_ups[ math.random( 1, #possible_follow_ups ) ]
 
+			-- Add the blocks in this segment to the world
 			for i, obj in ipairs( follow_up ) do
 				local obj = deepcopy( obj )
 				obj.x = obj.x + furthest_block_generated
@@ -418,9 +485,29 @@ while running do
 				world:add( obj, obj.x, obj.y, obj.width, obj.height )
 				level[ #level + 1 ] = obj
 			end
+			last_segment = follow_up
+
+			-- Fill the background
+			local i = 0
+			while i < follow_up.total_width do
+				local bg = backgrounds[ last_segment.background[ math.random( 1, #last_segment.background ) ] ]
+
+				active_backgrounds[ furthest_block_generated + i ] = bg
+
+				modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+					Gravity_Girl = "best game ever";
+					type = "background_add";
+
+					game_ID = local_game;
+					sender = local_player;
+					pos = furthest_block_generated + i;
+					data = bg;
+				} )
+
+				i = i + bg.width
+			end
 
 			furthest_block_generated = furthest_block_generated + follow_up.total_width
-			last_segment = follow_up
 		end
 	end
 
@@ -451,9 +538,6 @@ while running do
 
 	parent_window.setCursorPos( 1, 2 )
 	parent_window.write( local_player.dead and "dead" or "alive" )
-
-	parent_window.setCursorPos( 1, 3 )
-	parent_window.write( condition )
 
 	parent_window.setVisible( true )
 

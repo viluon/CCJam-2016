@@ -1,0 +1,7 @@
+( function()
+	return {
+		path = "dark_wires.nfp";
+		width = 30;
+		height = 18;
+	}
+end )()

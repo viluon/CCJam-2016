@@ -1,0 +1,6 @@
+( function()
+	return {
+		path = "cloudy_skies.nfp";
+		width = 49;
+	}
+end )()

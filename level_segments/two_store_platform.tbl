@@ -32,5 +32,6 @@
 			};
 		};
 		follow_up = { "top", "bottom", "middle" };
+		background = { "cloudy_skies" };
 	}
 end )()
