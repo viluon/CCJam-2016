@@ -763,6 +763,10 @@ while true do
 		local i = ( ev[ 4 ] - math.floor( height / 2 ) + #menu ) / 2
 
 		if menu[ i ] and ev[ 3 ] >= math.floor( menu[ i ].position ) and ev[ 3 ] < math.floor( menu[ i ].position + #menu[ i ].name ) then
+			if state ~= "search_menu" then
+				selected_game = nil
+			end
+
 			hide_secrets( now )
 			menu[ i ].fn()
 
