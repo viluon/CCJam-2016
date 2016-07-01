@@ -306,7 +306,8 @@ for i, position in ipairs( starter.player_positions ) do
 	players[ i ].speed = players[ i ].speed * position.direction
 end
 
-for i, player in ipairs( players ) do
+-- Register the players for collision detection
+for i, player in pairs( players ) do
 	world:add( player, player.position.x, player.position.y, player.width, player.height )
 end
 
@@ -361,7 +362,7 @@ while running do
 		if ev[ 3 ] == GAME_CHANNEL then
 			local message = ev[ 5 ]
 
-			if type( message ) == "table" and message.Gravity_Girl == "best game ever" and message.sender.ID ~= local_player.ID then
+			if type( message ) == "table" and message.Gravity_Girl == "best game ever" and message.sender and message.sender.ID ~= local_player.ID then
 				if message.game_ID == local_game then
 					if message.type == "player_update" then
 						if players[ message.player_ID ] then
