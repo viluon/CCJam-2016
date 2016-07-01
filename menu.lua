@@ -79,7 +79,7 @@ old_term = {
 }
 
 local	random_fill, draw_menu, launch, play, back_from_play, easeInOutQuad, update_elements, draw_settings, search, redraw_logo,
-		randomize_logo_colour, draw_search_results, back_from_search, hide_secrets, scan_for_games, log
+		randomize_logo_colour, draw_search_results, back_from_search, hide_secrets, scan_for_games, log, save_settings, load_settings
 
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
 local main_window = blittle.createWindow( parent_window )
@@ -308,6 +308,43 @@ function log( ... )
 
 	logfile:write( table.concat( { ... } ) .. "\n" )
 	logfile:flush()
+end
+
+--- Load settings from file (if exists)
+-- @return nil
+function load_settings()
+	if not fs.exists( directory .. "/.Gravity_Girl_settings" ) then return end
+
+	local f = io.open( directory .. "/.Gravity_Girl_settings", "r" )
+	local contents = f:read( "*a" )
+	f:close()
+
+	local setting_values = textutils.unserialise( contents )
+
+	for i, val in ipairs( setting_values ) do
+		for _, setting in ipairs( launch_settings ) do
+			if setting.name == val.name then
+				setting.value = val.value
+				break
+			end
+		end
+	end
+end
+
+--- Save settings to file
+-- @return nil
+function save_settings()
+	local setting_values = {}
+
+	for i, setting in ipairs( launch_settings ) do
+		setting_values[ #setting_values + 1 ] = { name = setting.name, value = setting.value }
+	end
+
+	local contents = textutils.serialise( setting_values )
+
+	local f = io.open( directory .. "/.Gravity_Girl_settings", "w" )
+	f:write( contents )
+	f:close()
 end
 
 --- Draw the menu elements
@@ -700,6 +737,9 @@ function redraw_logo( now )
 	end
 end
 
+-- Load settings
+load_settings()
+
 -- Cook initial menu element positions
 for i, element in ipairs( menu ) do
 	local x = width / 2 - #element.name / 2
@@ -770,6 +810,8 @@ while true do
 
 			hide_secrets( now )
 			menu[ i ].fn()
+
+			save_settings()
 
 		elseif state == "play_menu" then
 			if ev[ 3 ] == width and ev[ 4 ] == 1 then
@@ -887,6 +929,8 @@ while true do
 					launch()
 				end
 
+				save_settings()
+
 			elseif state == "main_menu" then
 				play()
 			end
@@ -896,10 +940,14 @@ while true do
 		if selected_settings_element and state == "play_menu" and type( selected_settings_element.value ) == "string" then
 			selected_settings_element.value = selected_settings_element.value .. ev[ 2 ]
 
+			save_settings()
+
 		elseif ev[ 2 ] == "q" then
 			--WARN: Hard link!
 			hide_secrets( now )
 			menu[ #menu ].fn()
+
+			save_settings()
 		end
 
 	elseif ev[ 1 ] == "modem_message" then
