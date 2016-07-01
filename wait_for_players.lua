@@ -10,6 +10,7 @@ local PARTICLE_SPACING_HORIZONTAL = 5.9
 local LOADING_HINT_SHOW_TIME = 6
 local GAME_INFO_REQUEST_INTERVAL = 2
 local PLAYER_PING_INTERVAL = 2
+local PLAYER_TIMEOUT = 4
 local SPEED = -30
 
 arguments.SPEED = SPEED
@@ -23,7 +24,7 @@ local modem = arguments.modem
 local selected_game = arguments.selected_game
 
 local	launch, setting, randomize_loading_hint, draw_background, update_particles, draw_loading_hint, log, request_game_info,
-		ping_players
+		ping_players, list_players
 
 local old_term = term.current()
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
@@ -63,6 +64,7 @@ local local_player = {
 
 local players = { local_player }
 local n_players = selected_game and selected_game.connected + 1 or 1
+local total_players
 
 arguments.local_player = local_player
 arguments.players = players
@@ -143,6 +145,34 @@ function ping_players( now )
 			game_ID = local_game;
 			sender = local_player;
 		} )
+	end
+end
+
+--- List connected players
+-- @return nil
+function list_players()
+	-- List connected players
+	local c = 0
+	for id, player in pairs( players ) do
+		term.setBackgroundColour( colours.black )
+		term.setCursorPos( 0.15 * width, 5 + c )
+		term.write( player.name )
+
+		term.setCursorPos( 0.85 * width, 5 + c )
+		term.setBackgroundColour( player.colour )
+		term.write( "  " )
+		c = c + 1
+	end
+
+	-- Fill the rest of the player list with empty slots
+	for i = n_players, total_players - 1 do
+		term.setBackgroundColour( colours.black )
+		term.setTextColour( colours.grey )
+		term.setCursorPos( 0.15 * width, 5 + i )
+		term.write( "Empty slot" )
+
+		term.setCursorPos( 0.85 * width, 5 + i )
+		term.write( "\127\127" )
 	end
 end
 
@@ -246,8 +276,10 @@ local loading_hint_changed = -1
 local last_time = os.clock()
 local end_queued = false
 local running = true
+local time_left = 5
+local last_seen_server = last_time
 
-local total_players = selected_game and selected_game.max or setting "Number of Players"
+total_players = selected_game and selected_game.max or setting "Number of Players"
 
 while n_players < total_players do
 	parent_window.setVisible( false )
@@ -271,7 +303,7 @@ while n_players < total_players do
 
 		local message = ev[ 5 ]
 
-		if n_players < total_players then
+		if not selected_game and n_players < total_players then
 			if message.type == "game_lookup" then
 				modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
 					Gravity_Girl = "best game ever";
@@ -286,24 +318,30 @@ while n_players < total_players do
 				} )
 
 			elseif message.type == "game_join" then
+				message.data.last_seen = now
 				players[ message.data.ID ] = message.data
 				n_players = n_players + 1
 			end
 		end
 
 		if selected_game and message.type == "game_info" then
+			last_seen_server = now
+
 			if message.game_ID == selected_game.game_ID then
 				players = message.data.players
 				n_players = message.data.n_players
 			end
 
 		elseif selected_game and message.type == "ping" then
+			last_seen_server = now
+			
 			if message.game_ID == selected_game.game_ID then
 				modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
 					Gravity_Girl = "best game ever";
 					type = "pong";
 
 					sender = local_player;
+					game_ID = local_game;
 				} )
 			end
 
@@ -352,20 +390,23 @@ while n_players < total_players do
 	-- Check that connected players are still online
 	ping_players( now )
 
-	-- Remove players that weren't seen for a long time
-	local to_remove = {}
+	if not selected_game then
+		-- Remove players that weren't seen for a long time
+		local to_remove = {}
 
-	for _, player in pairs( players ) do
-		if now - player.last_seen > PLAYER_TIMEOUT then
-			to_remove[ #to_remove + 1 ] = player
+		for _, player in pairs( players ) do
+			if player.ID ~= local_player.ID and now - player.last_seen > PLAYER_TIMEOUT then
+				to_remove[ #to_remove + 1 ] = player
+			end
 		end
-	end
 
-	for _, p in ipairs( to_remove ) do
-		for i, player in pairs( players ) do
-			if player == p then
-				table.remove( players, i )
-				break
+		for _, p in ipairs( to_remove ) do
+			for i, player in pairs( players ) do
+				if player.ID == p.ID then
+					players[ i ] = nil
+					n_players = n_players - 1
+					break
+				end
 			end
 		end
 	end
@@ -388,24 +429,93 @@ while n_players < total_players do
 	term.setCursorPos( width / 2 - #heading / 2, 2 )
 	term.write( heading )
 
-	-- List connected players
-	local c = 0
-	for id, player in pairs( players ) do
-		term.setBackgroundColour( colours.black )
-		term.setCursorPos( 0.15 * width, 5 + c )
-		term.write( player.name )
-
-		term.setCursorPos( 0.85 * width, 5 + c )
-		term.setBackgroundColour( player.colour )
-		term.write( "  " )
-		c = c + 1
-	end
-
+	list_players()
 	draw_loading_hint()
 
 	hint_window.setVisible( true )
 	parent_window.setVisible( true )
 	term.redirect( main_window )
+
+	last_time = now
+end
+
+while time_left > 0 do
+	parent_window.setVisible( false )
+	hint_window.setVisible( true )
+	main_window.setVisible( false )
+
+	if not end_queued then
+		os.queueEvent( "end" )
+		end_queued = true
+	end
+
+	local ev = { coroutine.yield() }
+	local now = os.clock()
+	local dt = now - last_time
+
+	if ev[ 1 ] == "end" then
+		end_queued = false
+
+	elseif ev[ 1 ] == "modem_message" then
+		--log( "wait for players received message:", textutils.serialise( ev ) )
+
+		local message = ev[ 5 ]
+
+		if selected_game and message.type == "game_info" then
+			if message.game_ID == selected_game.game_ID then
+				players = message.data.players
+				n_players = message.data.n_players
+			end
+
+		elseif not selected_game and message.type == "game_info_request" then
+			if message.game_ID == local_game then
+				modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+					Gravity_Girl = "best game ever";
+					type = "game_info";
+
+					game_ID = local_game;
+
+					data = {
+						players = players;
+						n_players = n_players;
+					};
+				} )
+			end
+		end
+	end
+
+	-- Update loading hint
+	if now - loading_hint_changed > LOADING_HINT_SHOW_TIME then
+		randomize_loading_hint()
+		loading_hint_changed = now
+	end
+
+	-- Ask for game_info
+	request_game_info( now )
+
+	draw_background()
+
+	main_window.setVisible( true )
+
+	-- Overlay stuff
+	term.redirect( parent_window )
+
+	time_left = time_left - dt
+	local counter = "Game will start in " .. math.ceil( time_left )
+
+	term.setBackgroundColour( colours.black )
+	term.setTextColour( colours.white )
+	term.setCursorPos( width / 2 - #counter / 2, 2 )
+	term.write( counter )
+
+	list_players()
+	draw_loading_hint()
+
+	hint_window.setVisible( true )
+	parent_window.setVisible( true )
+	term.redirect( main_window )
+
+	last_time = now
 end
 
 pcall( logfile.close, logfile )
