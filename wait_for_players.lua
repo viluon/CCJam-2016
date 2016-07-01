@@ -11,6 +11,7 @@ local LOADING_HINT_SHOW_TIME = 6
 local GAME_INFO_REQUEST_INTERVAL = 2
 local PLAYER_PING_INTERVAL = 2
 local PLAYER_TIMEOUT = 4
+local SERVER_TIMEOUT = 3
 local SPEED = -30
 
 arguments.SPEED = SPEED
@@ -73,7 +74,6 @@ local local_game
 
 if not arguments.selected_game then
 	local_game = tostring( {} ) .. math.random( 1, 2 ^ 10 )
-	arguments.local_game = local_game
 else
 	local_game = arguments.selected_game.game_ID
 	modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
@@ -85,6 +85,8 @@ else
 		data = local_player;
 	} )
 end
+
+arguments.local_game = local_game
 
 local f = io.open( directory .. "/loading_hints.tbl", "r" )
 local contents = f:read( "*a" )
@@ -379,6 +381,13 @@ while n_players < total_players do
 	-- Check that connected players are still online
 	ping_players( now )
 
+	if selected_game then
+		-- Check that the server is still responding
+		if now - last_seen_server > SERVER_TIMEOUT then
+			error( "Connection lost", 0 )
+		end
+	end
+
 	if not selected_game then
 		-- Remove players that weren't seen for a long time
 		local to_remove = {}
@@ -451,6 +460,8 @@ while time_left > 0 do
 		local message = ev[ 5 ]
 
 		if selected_game and message.type == "game_info" then
+			last_seen_server = now
+
 			if message.game_ID == selected_game.game_ID then
 				players = message.data.players
 				n_players = message.data.n_players
@@ -481,6 +492,13 @@ while time_left > 0 do
 
 	-- Ask for game_info
 	request_game_info( now )
+
+	if selected_game then
+		-- Check that the server is still responding
+		if now - last_seen_server > SERVER_TIMEOUT then
+			error( "Connection lost", 0 )
+		end
+	end
 
 	draw_background()
 
