@@ -270,6 +270,17 @@ function update_player( player, dt )
 		player.dead = true
 		world:remove( player.ID )
 
+		if player == local_player then
+			modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+				Gravity_Girl = "best game ever";
+				type = "player_update";
+
+				game_ID = local_game;
+				sender = player;
+				data = player;
+			} )
+		end
+
 		return
 	end
 
@@ -291,8 +302,8 @@ end
 --- Render the backgrounds
 -- @return nil
 function draw_background()
-	for bg_x, bg in pairs( active_backgrounds ) do
-		local this_x = round( camera_offset.x + bg_x )
+	for z_index, bg in ipairs( active_backgrounds ) do
+		local this_x = round( camera_offset.x + bg.pos )
 
 		if this_x + bg.width > 0 then
 			for y = 1, bg.height and h or 1, bg.height or 1 do
@@ -490,9 +501,10 @@ while running do
 			-- Fill the background
 			local i = 0
 			while i < follow_up.total_width do
-				local bg = backgrounds[ last_segment.background[ math.random( 1, #last_segment.background ) ] ]
+				local bg = deepcopy( backgrounds[ last_segment.background[ math.random( 1, #last_segment.background ) ] ] )
 
-				active_backgrounds[ furthest_block_generated + i ] = bg
+				bg.pos = furthest_block_generated + i
+				active_backgrounds[ #active_backgrounds + 1 ] = bg
 
 				modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
 					Gravity_Girl = "best game ever";
@@ -500,7 +512,7 @@ while running do
 
 					game_ID = local_game;
 					sender = local_player;
-					pos = furthest_block_generated + i;
+					pos = #active_backgrounds;
 					data = bg;
 				} )
 
