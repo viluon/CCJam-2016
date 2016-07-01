@@ -37,6 +37,8 @@ local selected_game = arguments.selected_game
 local local_player = arguments.local_player
 local local_game = arguments.local_game
 
+local broadcast = not selected_game
+
 local furthest_block_generated = -1
 
 local camera_offset = {
