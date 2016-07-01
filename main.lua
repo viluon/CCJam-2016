@@ -46,46 +46,6 @@ local camera_offset = {
 	y = 0;
 }
 
---[[
-local local_player = {
-	height = 3;
-	width = 2;
-
-	colour = launch_settings[ 3 ].options[ launch_settings[ 3 ].value ] or colours.blue;
-
-	velocity = {
-		x = 0;
-		y = 0;
-	};
-	
-	position = {
-		x = 12;
-		y = h / 2;
-	};
-
-	speed = SPEED;
-}
-
-local second_player = {
-	height = 3;
-	width = 2;
-
-	colour = colours.green;
-
-	velocity = {
-		x = 0;
-		y = 0;
-	};
-	
-	position = {
-		x = 12;
-		y = h / 2;
-	};
-
-	speed = SPEED;
-}
---]]
-
 local level = {}
 local segments = {}
 local backgrounds = {}
@@ -130,25 +90,6 @@ for i, obj in ipairs( starter ) do
 end
 
 local last_segment = starter
-
---[[
-{
-	x = 9;
-	y = h * ( 3/5 ) + 1;
-
-	width = 18;
-	height = 3;
-	colour = colours.grey;
-};
-{
-	x = 36;
-	y = h * ( 1/5 ) + 1;
-
-	width = 18;
-	height = 3;
-	colour = colours.grey;
-};
---]]
 
 local players = arguments.players
 
@@ -289,16 +230,6 @@ function draw()
 		draw_player( player )
 	end
 end
-
--- Initialize world
-
---[[
-for i, segment in ipairs( level ) do
-	for i, obj in ipairs( segment ) do
-		world:add( obj, obj.x, obj.y, obj.width, obj.height )
-	end
-end
---]]
 
 -- Place players at their appropriate spawn locations
 for i, position in ipairs( starter.player_positions ) do

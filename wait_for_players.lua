@@ -214,17 +214,6 @@ function draw_loading_hint()
 	print( loading_hints[ current_loading_hint ] )
 end
 
---[[
---- Update the particles in the background
--- @param dt Delta time, time passed since last update
--- @return nil
-function update_particles( dt )
-	for i, particle in ipairs( particles ) do
-		particle.y =  + particle.y
-	end
-end
---]]
-
 --- Launch the actual game
 -- @return nil
 function launch()
@@ -334,7 +323,7 @@ while n_players < total_players do
 
 		elseif selected_game and message.type == "ping" then
 			last_seen_server = now
-			
+
 			if message.game_ID == selected_game.game_ID then
 				modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
 					Gravity_Girl = "best game ever";

@@ -175,50 +175,6 @@ local menu = {
 		name = "Exit";
 		fn = function()
 			if state == "main_menu" then
-				--[[
-					capture = true
-
-					main_window.setVisible( true )
-					background_window.setVisible( true )
-
-					-- Overlay stuff
-					update_menu( now )
-					draw_menu()
-
-					parent_window.setVisible( true )
-
-					term.redirect( actual_term )
-
-					local f = io.open( "screencap", "w" )
-					f:write( textutils.serialise( old_term.data ) )
-					f:close()
-
-					local start = os.clock()
-					local total_time = 4
-					while os.clock() - start < total_time do
-						term.clear()
-						-- Iterate over the captured image and render it
-						local y = 1
-						while y < #old_term.data do
-							local deltay = easeInOutQuad( os.clock() - start, 1, 3, total_time )
-							local row = old_term.data[ y ]
-							local x = 1
-
-							while x < #row[ 1 ] do
-								local deltax = easeInOutQuad( os.clock() - start, 1, 3, total_time )
-
-								term.setCursorPos( ( ( deltax - 1 ) / 4 ) * width / 2 + x / deltax, ( ( deltay - 1 ) / 4 ) * height / 2 + y / deltay )
-								term.blit( row[ 1 ]:sub( x, x ), row[ 2 ]:sub( x, x ), row[ 3 ]:sub( x, x ) )
-
-								x = x + 1
-							end
-
-							y = y + 1
-						end
-					end
-
-					read()
-				--]]
 				return error()
 			elseif state == "play_menu" then
 				return back_from_play()
