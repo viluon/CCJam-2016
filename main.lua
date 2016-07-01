@@ -16,12 +16,13 @@ local ENABLE_LOGGING = true
 local INITIAL_SCROLL_SPEED = 2
 local PLAYER_BASIC_H_SPEED = 10
 local PLAYER_H_SPEED = 5
+local PLAYER_REFRESH_INTERVAL = 0.2
 
 local old_term = term.current()
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
 local main_window = blittle.createWindow( parent_window, nil, nil, nil, nil, false )
 
-local	draw, draw_player, update_player, round, log, deepcopy, draw_background, setting
+local	draw, draw_player, update_player, round, log, deepcopy, draw_background, setting, refresh_players
 
 local condition
 
@@ -71,17 +72,44 @@ for i, name in ipairs( fs.list( segments_dir ) ) do
 end
 
 local starters = {}
-for i, segment in ipairs( segments ) do
-	if segment.starter then
-		starters[ #starters + 1 ] = segment
+local starter
+
+if broadcast then
+	for i, segment in ipairs( segments ) do
+		if segment.starter then
+			starters[ #starters + 1 ] = segment
+		end
+	end
+
+	if #starters == 0 then
+		error( "No starter segment found", 0 )
+	end
+
+	starter = starters[ math.random( 1, #starters ) ]
+
+	modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+		Gravity_Girl = "best game ever";
+		type = "starter";
+
+		game_ID = local_game;
+		sender = local_player;
+		data = starter;
+	} )
+else
+	local received
+
+	while not received do
+		local ev = { coroutine.yield( "modem_message" ) }
+
+		local message = ev[ 5 ]
+
+		if ev[ 3 ] == GAME_CHANNEL and type( message ) == "table" and message.Gravity_Girl == "best game ever" and message.game_ID == local_game then
+			received = true
+			starter = message.data
+		end
 	end
 end
 
-if #starters == 0 then
-	error( "No starter segment found", 0 )
-end
-
-local starter = starters[ math.random( 1, #starters ) ]
 furthest_block_generated = starter.total_width
 
 for i, obj in ipairs( starter ) do
@@ -92,6 +120,7 @@ end
 local last_segment = starter
 
 local players = arguments.players
+local n_players = arguments.n_players
 
 --- Write to the log file
 -- @param ... The data to write
@@ -146,6 +175,24 @@ function setting( name )
 	error( "No setting of name '" .. name .. "' was found.", 2 )
 end
 
+local last_player_refresh = -1
+--- Send updated player data to connected clients
+-- @param now The current time
+-- @return nil
+function refresh_players( now )
+	if broadcast and now - last_player_refresh > PLAYER_REFRESH_INTERVAL then
+		last_player_refresh = now
+		modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+			Gravity_Girl = "best game ever";
+			type = "player_refresh";
+
+			game_ID = local_game;
+			sender = local_player;
+			data = players;
+		} )
+	end
+end
+
 --- Draw a player
 -- @param player The player to draw
 -- @return nil
@@ -181,7 +228,7 @@ function update_player( player, dt )
 
 	if player.position.y > h or player.position.y + player.height + 1 < 0 or player.position.x + camera_offset.x < 0 then
 		player.dead = true
-		world:remove( player )
+		world:remove( player.ID )
 
 		return
 	end
@@ -190,9 +237,9 @@ function update_player( player, dt )
 	player.velocity.x = PLAYER_BASIC_H_SPEED + ( 1 - ( player.position.x + camera_offset.x ) / w ) * PLAYER_H_SPEED
 	player.velocity.y = player.speed
 
-	player.position.x, player.position.y = world:move( player, player.position.x + player.velocity.x * dt, player.position.y + player.velocity.y * dt )
+	player.position.x, player.position.y = world:move( player.ID, player.position.x + player.velocity.x * dt, player.position.y + player.velocity.y * dt )
 
-	local x, y, collisions, n_collisions = world:check( player, player.position.x, player.position.y + player.velocity.y * 0.01 )
+	local x, y, collisions, n_collisions = world:check( player.ID, player.position.x, player.position.y + player.velocity.y * 0.01 )
 
 	if n_collisions > 0 then
 		player.can_switch = true
@@ -226,22 +273,25 @@ function draw()
 	end
 
 	-- Draw the players
-	for i, player in ipairs( players ) do
+	for i, player in pairs( players ) do
 		draw_player( player )
 	end
 end
 
 -- Place players at their appropriate spawn locations
+local index
 for i, position in ipairs( starter.player_positions ) do
-	if i > #players then break end
+	index = next( players, index )
 
-	players[ i ].position = position
-	players[ i ].speed = players[ i ].speed * position.direction
+	if i > n_players or not index then break end
+
+	players[ index ].position = position
+	players[ index ].speed = players[ index ].speed * position.direction
 end
 
 -- Register the players for collision detection
 for i, player in pairs( players ) do
-	world:add( player, player.position.x, player.position.y, player.width, player.height )
+	world:add( player.ID, player.position.x, player.position.y, player.width, player.height )
 end
 
 local last_time = os.clock()
@@ -265,24 +315,22 @@ while running do
 		if ev[ 2 ] == keys.space and local_player.can_switch then
 			local_player.speed = -local_player.speed
 
-			if broadcast then
-				modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
-					Gravity_Girl = "best game ever";
-					type = "player_update";
+			modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+				Gravity_Girl = "best game ever";
+				type = "player_update";
 
-					game_ID = local_game;
-					sender = local_player;
-					data = local_player;
-				} )
-			end
-
-		elseif ev[ 2 ] == keys.rightShift and players[ 2 ].can_switch then
-			players[ 2 ].speed = -players[ 2 ].speed
+				game_ID = local_game;
+				sender = local_player;
+				data = local_player;
+			} )
 		end
 
 	elseif ev[ 1 ] == "char" then
 		if ev[ 2 ] == "q" then
 			running = false
+		elseif ev[ 2 ] == "f" then
+			log( now )
+			log( textutils.serialise( players ) )
 		end
 
 	elseif ev[ 1 ] == "terminate" then
@@ -298,9 +346,32 @@ while running do
 			if type( message ) == "table" and message.Gravity_Girl == "best game ever" and message.sender and message.sender.ID ~= local_player.ID then
 				if message.game_ID == local_game then
 					if message.type == "player_update" then
-						if players[ message.player_ID ] then
-							players[ message.player_ID ] = message.data
+						if not world:hasItem( message.data.ID ) then
+							world:add( message.data.ID, message.data.position.x, message.data.position.y, message.data.width, message.data.height )
+						else
+							world:update( message.data.ID, message.data.position.x, message.data.position.y )
 						end
+
+						players[ message.data.ID ] = message.data
+
+					--[[
+						elseif message.type == "player_refresh" then
+							players = message.data
+
+							for i, player in pairs( message.data ) do
+								if player.ID ~= local_player.ID then
+									if world:hasItem( player.ID ) then
+										--world:update( player.ID, player.position.x, player.position.y )
+									else
+										world:add( player.ID, player.position.x, player.position.y, player.width, player.height )
+									end
+
+									players[ i ] = player
+								else
+									players[ local_player.ID ] = local_player
+								end
+							end
+					--]]
 
 					elseif message.type == "world_update_add" then
 						world:add( message.data, message.data.x, message.data.y, message.data.width, message.data.height )
@@ -311,7 +382,9 @@ while running do
 		end
 	end
 
-	if not selected_game then
+	if broadcast then
+		--refresh_players( now )
+
 		-- Generate environment
 		while furthest_block_generated < w - camera_offset.x do
 			local possible_follow_ups = {}
@@ -374,10 +447,10 @@ while running do
 
 	-- Do overlay stuff here
 	parent_window.setCursorPos( 1, 1 )
-	parent_window.write( players[ 1 ].velocity.y )
+	parent_window.write( local_player.velocity.y )
 
 	parent_window.setCursorPos( 1, 2 )
-	parent_window.write( players[ 1 ].dead and "dead" or "alive" )
+	parent_window.write( local_player.dead and "dead" or "alive" )
 
 	parent_window.setCursorPos( 1, 3 )
 	parent_window.write( condition )
