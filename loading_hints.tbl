@@ -5,5 +5,7 @@
 		"The first versions of Gravity Girl included plans for a complex rendering engine that would make animations from static pictures.";
 		"All levels in Gravity Girl are procedurally generated and do *not* have ends.";
 		"All names, characters, and incidents portrayed in this game are fictitious. No identification with actual persons, places, buildings, and products is intended.";
+		"Press Alt + F4 to enable wall hack.";
+		"Hold Ctrl + S to teleport other players out of the view.";
 	}
 end )()
