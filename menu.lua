@@ -463,7 +463,7 @@ function draw_search_results()
 			parent_window.write( element.name .. " |" )
 
 			parent_window.setCursorPos( width / 2 + 3, element.position )
-			parent_window.write( element.connected .. "/" .. element.max )
+			parent_window.write( element.game_details.connected .. "/" .. element.game_details.max )
 		else
 			local pos = element.name:find( "|" )
 
@@ -864,7 +864,7 @@ while true do
 			for i, element in ipairs( search_results ) do
 				if math.floor( element.position ) == ev[ 4 ] and not element.not_clickable then
 					selected_search_result = element
-					selected_game = element.game_ID
+					selected_game = element.game_details
 
 					break
 				end
@@ -946,14 +946,18 @@ while true do
 						local found = false
 						-- Check if we should only update an existing entry
 						for i, entry in ipairs( search_results ) do
-							if entry.game_ID == message.game_ID then
+							if entry.game_details and entry.game_details.game_ID == message.game_ID then
 								found = true
 
 								search_results[ i ] = {
 									name = message.sender.name;
-									connected = message.data.connected;
-									max = message.data.max;
-									game_ID = message.game_ID;
+
+									game_details = {
+										name = message.sender.name;
+										connected = message.data.connected;
+										max = message.data.max;
+										game_ID = message.game_ID;
+									};
 
 									position = height + #search_results;
 									target_position = entry.target_position;
@@ -974,9 +978,13 @@ while true do
 						if not found then
 							search_results[ #search_results + 1 ] = {
 								name = message.sender.name;
-								connected = message.data.connected;
-								max = message.data.max;
-								game_ID = message.game_ID;
+
+								game_details = {
+									name = message.sender.name;
+									connected = message.data.connected;
+									max = message.data.max;
+									game_ID = message.game_ID;
+								};
 
 								position = height + #search_results;
 
