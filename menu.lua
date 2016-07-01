@@ -28,6 +28,7 @@ local LOGO_REDRAW_TIME = 0.8
 local SCAN_INTERVAL = 1
 local GAME_CHANNEL = 72
 local ENABLE_LOGGING = true
+local ELEMENT_TIMEOUT = 3
 
 local math = math
 local term = term
@@ -122,6 +123,12 @@ local logo = {
 
 local background_window = blittle.createWindow( parent_window, 1, 3, #logo[ 1 ] / 2, #logo / 3 )
 
+local selected_settings_element
+local selected_secret_settings_element
+local selected_search_result
+
+local search_results = {}
+
 local menu = {
 	{
 		name = "Play";
@@ -140,8 +147,21 @@ local menu = {
 	{
 		name = "Join";
 		fn = function()
-			if state == "search_menu" and modem and selected_search_result then
-				return launch()
+			if state == "search_menu" and modem then
+				local selection_exists = false
+
+				-- Check that the search result actually exists
+				for i, element in ipairs( search_results ) do
+					if element == selected_search_result then
+						selection_exists = true
+						break
+					end
+				end
+
+				if selection_exists then
+					return launch()
+				end
+
 			elseif state == "main_menu" then
 				return search()
 			elseif state == "play_menu" then
@@ -258,12 +278,6 @@ local secret_settings = {
 	};
 }
 
-local selected_settings_element
-local selected_secret_settings_element
-local selected_search_result
-
-local search_results = {}
-
 if not modem then
 	search_results[ 1 ] = {
 		name = "No wireless modem found :(";
@@ -271,7 +285,7 @@ if not modem then
 	}
 else
 	search_results[ 1 ] = {
-		name = "Searching for games...";
+		name = "Author| Players";
 		not_clickable = true;
 	}
 end
@@ -444,8 +458,29 @@ function draw_search_results()
 		parent_window.setBackgroundColour( selected and colours.white or colours.black )
 		parent_window.setTextColour( selected and colours.grey or colours.white )
 
-		parent_window.setCursorPos( width / 2 - #element.name / 2, element.position )
-		parent_window.write( element.name )
+		if not element.not_clickable then
+			parent_window.setCursorPos( width / 2 - #element.name, element.position )
+			parent_window.write( element.name .. " |" )
+
+			parent_window.setCursorPos( width / 2 + 3, element.position )
+			parent_window.write( element.connected .. "/" .. element.max )
+		else
+			local pos = element.name:find( "|" )
+
+			if pos then
+				local a = element.name:sub( 1, pos - 1 )
+				local b = element.name:sub( pos, -1 )
+
+				parent_window.setCursorPos( width / 2 - #a, element.position )
+				parent_window.write( a )
+
+				parent_window.setCursorPos( width / 2 + 1, element.position )
+				parent_window.write( b )
+			else
+				parent_window.setCursorPos( width / 2 - #element.name / 2, element.position )
+				parent_window.write( element.name )
+			end
+		end
 	end
 end
 
@@ -454,13 +489,12 @@ end
 -- @return nil
 function scan_for_games( now )
 	if modem and ( now - last_scan > SCAN_INTERVAL ) then
-		--log "send"
 		modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
 			Gravity_Girl = "best game ever";
 			type = "game_lookup";
 
 			sender = local_player;
-			} )
+		} )
 
 		last_scan = now
 	end
@@ -471,9 +505,24 @@ end
 -- @param tbl Table to update
 -- @return nil
 function update_elements( now, tbl )
+	local to_remove = {}
+
 	for i, element in ipairs( tbl ) do
 		if element.position ~= element.target_position then
 			element.position = easeInOutQuad( now - element.start_anim_time, element.original_position, element.target_position - element.original_position, ELEMENT_ANIM_TIME )
+		end
+
+		if element.last_seen and os.clock() - element.last_seen > ELEMENT_TIMEOUT then
+			to_remove[ #to_remove + 1 ] = element
+		end
+	end
+
+	for _, el in ipairs( to_remove ) do
+		for i, el2 in ipairs( tbl ) do
+			if el == el2 then
+				table.remove( tbl, i )
+				break
+			end
 		end
 	end
 end
@@ -893,23 +942,53 @@ while true do
 
 			if type( message ) == "table" and message.Gravity_Girl == "best game ever" and message.sender and message.sender.ID ~= os.getComputerID() then
 				if message.type == "game_lookup_response" then
-					if message.game_ID and not search_results[ message.game_ID ] then
-						search_results[ message.game_ID ] = true
+					if message.game_ID then
+						local found = false
+						-- Check if we should only update an existing entry
+						for i, entry in ipairs( search_results ) do
+							if entry.game_ID == message.game_ID then
+								found = true
 
-						search_results[ #search_results + 1 ] = {
-							name = message.sender.name;
-							connected = message.data.connected;
-							max = message.data.max;
-							game_ID = message.game_ID;
+								search_results[ i ] = {
+									name = message.sender.name;
+									connected = message.data.connected;
+									max = message.data.max;
+									game_ID = message.game_ID;
 
-							position = height + #search_results;
-						}
+									position = height + #search_results;
+									target_position = entry.target_position;
+									original_position = entry.original_position;
+									start_anim_time = entry.start_anim_time;
 
-						-- Recalculate search results element positions
-						for i, element in ipairs( search_results ) do
-							element.target_position = state == "search_menu" and height / 2 - #search_results + i * 2 or height + i * 2
-							element.original_position = element.position
-							element.start_anim_time = now
+									last_seen = now;
+								}
+
+								if selected_search_result == entry then
+									selected_search_result = search_results[ i ]
+								end
+
+								break
+							end
+						end
+
+						if not found then
+							search_results[ #search_results + 1 ] = {
+								name = message.sender.name;
+								connected = message.data.connected;
+								max = message.data.max;
+								game_ID = message.game_ID;
+
+								position = height + #search_results;
+
+								last_seen = now;
+							}
+
+							-- Recalculate search results element positions
+							for i, element in ipairs( search_results ) do
+								element.target_position = state == "search_menu" and height / 2 - #search_results + i * 2 or height + i * 2
+								element.original_position = element.position
+								element.start_anim_time = now
+							end
 						end
 					end
 				end
@@ -927,9 +1006,20 @@ while true do
 
 	-- Overlay stuff
 	update_elements( now, launch_settings )
-	update_elements( now, search_results )
 	update_elements( now, secret_settings )
 	update_elements( now, menu )
+
+	local last_n = #search_results
+	update_elements( now, search_results )
+
+	if #search_results ~= last_n then
+		-- Recalculate search results element positions
+		for i, element in ipairs( search_results ) do
+			element.target_position = state == "search_menu" and height / 2 - #search_results + i * 2 or height + i * 2
+			element.original_position = element.position
+			element.start_anim_time = now
+		end
+	end
 
 	draw_settings()
 	draw_search_results()
