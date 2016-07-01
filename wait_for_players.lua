@@ -8,6 +8,8 @@ local ENABLE_LOGGING = arguments.ENABLE_LOGGING
 local PARTICLE_SPACING_VERTICAL = 9
 local PARTICLE_SPACING_HORIZONTAL = 5.9
 local LOADING_HINT_SHOW_TIME = 6
+local GAME_INFO_REQUEST_INTERVAL = 2
+local PLAYER_PING_INTERVAL = 2
 local SPEED = -30
 
 arguments.SPEED = SPEED
@@ -20,7 +22,8 @@ local secret_settings = arguments.secret_settings
 local modem = arguments.modem
 local selected_game = arguments.selected_game
 
-local	launch, setting, randomize_loading_hint, draw_background, update_particles, draw_loading_hint, log
+local	launch, setting, randomize_loading_hint, draw_background, update_particles, draw_loading_hint, log, request_game_info,
+		ping_players
 
 local old_term = term.current()
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
@@ -59,7 +62,8 @@ local local_player = {
 }
 
 local players = { local_player }
-local n_players = 1
+local n_players = selected_game and selected_game.connected + 1 or 1
+
 arguments.local_player = local_player
 arguments.players = players
 
@@ -69,7 +73,7 @@ if not arguments.selected_game then
 	local_game = tostring( {} ) .. math.random( 1, 2 ^ 10 )
 	arguments.local_game = local_game
 else
-	local_game = arguments.selected_game
+	local_game = arguments.selected_game.game_ID
 	modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
 		Gravity_Girl = "best game ever";
 		type = "game_join";
@@ -106,6 +110,40 @@ function log( ... )
 
 	logfile:write( table.concat( { ... } ) .. "\n" )
 	logfile:flush()
+end
+
+local last_game_info_request = -1
+--- Ask for an update on the pre-game state
+-- @param now Current clock time
+-- @return nil
+function request_game_info( now )
+	if selected_game and now - last_game_info_request > GAME_INFO_REQUEST_INTERVAL then
+		last_game_info_request = now
+		modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+			Gravity_Girl = "best game ever";
+			type = "game_info_request";
+
+			game_ID = local_game;
+			sender = local_player;
+		} )
+	end
+end
+
+local last_players_ping = -1
+--- Ping connected players to see whether they are still online
+-- @param now Current clock time
+-- @return nil
+function ping_players( now )
+	if not selected_game and now - last_players_ping > PLAYER_PING_INTERVAL then
+		last_players_ping = now
+		modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+			Gravity_Girl = "best game ever";
+			type = "ping";
+
+			game_ID = local_game;
+			sender = local_player;
+		} )
+	end
 end
 
 --- Render the background
@@ -209,7 +247,7 @@ local last_time = os.clock()
 local end_queued = false
 local running = true
 
-local total_players = setting "Number of Players"
+local total_players = selected_game and selected_game.max or setting "Number of Players"
 
 while n_players < total_players do
 	parent_window.setVisible( false )
@@ -253,6 +291,49 @@ while n_players < total_players do
 			end
 		end
 
+		if selected_game and message.type == "game_info" then
+			if message.game_ID == selected_game.game_ID then
+				players = message.data.players
+				n_players = message.data.n_players
+			end
+
+		elseif selected_game and message.type == "ping" then
+			if message.game_ID == selected_game.game_ID then
+				modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+					Gravity_Girl = "best game ever";
+					type = "pong";
+
+					sender = local_player;
+				} )
+			end
+
+		elseif not selected_game and message.type == "game_info_request" then
+			if message.game_ID == local_game then
+				modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+					Gravity_Girl = "best game ever";
+					type = "game_info";
+
+					game_ID = local_game;
+
+					data = {
+						players = players;
+						n_players = n_players;
+					};
+				} )
+			end
+
+		elseif not selected_game and message.type == "pong" then
+			if message.game_ID == local_game then
+				-- Find the sender among the players
+				for _, player in pairs( players ) do
+					if player.ID == message.sender.ID then
+						player.last_seen = now
+						break
+					end
+				end
+			end
+		end
+
 	elseif ev[ 1 ] == "char" then
 		if ev[ 2 ] == "q" then
 			error()
@@ -265,7 +346,29 @@ while n_players < total_players do
 		loading_hint_changed = now
 	end
 
-	--update_particles( dt )
+	-- Ask for game_info
+	request_game_info( now )
+
+	-- Check that connected players are still online
+	ping_players( now )
+
+	-- Remove players that weren't seen for a long time
+	local to_remove = {}
+
+	for _, player in pairs( players ) do
+		if now - player.last_seen > PLAYER_TIMEOUT then
+			to_remove[ #to_remove + 1 ] = player
+		end
+	end
+
+	for _, p in ipairs( to_remove ) do
+		for i, player in pairs( players ) do
+			if player == p then
+				table.remove( players, i )
+				break
+			end
+		end
+	end
 
 	draw_background()
 
