@@ -100,7 +100,7 @@
 			colour = 128; -- colours.grey
 		};
 
-		type = "top";
+		type = "middle";
 		follow_up = { "bottom" };
 		background = { "cloudy_skies" };
 	}

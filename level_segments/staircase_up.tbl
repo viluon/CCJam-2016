@@ -101,7 +101,7 @@
 		};
 
 		type = "bottom";
-		follow_up = { "top" };
+		follow_up = { "middle", "top" };
 		background = { "cloudy_skies" };
 	}
 end )()
