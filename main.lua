@@ -581,7 +581,12 @@ while running do
 	end
 
 	if alive < ( n_players > 1 and 2 or 1 ) then
-		_, winner = next( players )
+		for ID, player in pairs( players ) do
+			if not player.dead then
+				winner = player
+				break
+			end
+		end
 
 		break
 	end
