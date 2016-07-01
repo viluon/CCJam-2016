@@ -75,6 +75,7 @@ old_term = {
 	getCursorBlink = actual_term.getCursorBlink;
 	isColor = actual_term.isColor;
 	isColour = actual_term.isColour;
+	clear = actual_term.clear;
 }
 
 local	random_fill, draw_menu, launch, play, back_from_play, easeInOutQuad, update_elements, draw_settings, search, redraw_logo,

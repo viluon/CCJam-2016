@@ -26,6 +26,7 @@ local	draw, draw_player, update_player, round, log, deepcopy, draw_background, s
 		update_backgrounds
 
 local local_player
+local _, winner
 
 term.redirect( main_window )
 local w, h = term.getSize()
@@ -579,6 +580,12 @@ while running do
 		end
 	end
 
+	if alive < ( n_players > 1 and 2 or 1 ) then
+		_, winner = next( players )
+
+		break
+	end
+
 	if furthest_right + camera_offset.x > ( 2 / 3 ) * w then
 		camera_offset.x = ( 2 / 3 ) * w - furthest_right
 	end
@@ -606,6 +613,14 @@ while running do
 end
 
 term.redirect( old_term )
+term.clear()
 term.setCursorPos( 1, 1 )
 
 logfile:close()
+
+print( "Game over!\nWinner: " .. ( winner and winner.name or "nobody" ) .. "\nEnter to continue" )
+read()
+
+os.queueEvent( "x" )
+coroutine.yield( "x" )
+os.queueEvent( "end" )
