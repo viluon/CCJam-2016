@@ -6,7 +6,7 @@
 
 			width = 22;
 			height = 3;
-			colour = 128; -- colours.grey
+			colour = 2; -- colours.orange
 		};
 		{
 			x = 24;
@@ -14,7 +14,7 @@
 
 			width = 22;
 			height = 3;
-			colour = 128; -- colours.grey
+			colour = 2; -- colours.orange
 		};
 
 		type = "top";
