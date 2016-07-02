@@ -99,6 +99,7 @@ if modem then
 end
 
 local state = "main_menu"
+local running = true
 local secret_menu
 local selected_game
 
@@ -231,7 +232,7 @@ at the left of the screen.
 		name = "Exit";
 		fn = function()
 			if state == "main_menu" then
-				return error()
+				running = false
 			elseif state == "play_menu" then
 				return back_from_play()
 			elseif state == "search_menu" then
@@ -964,7 +965,7 @@ local end_queued = false
 -- Render the logo
 redraw_logo( last_time )
 
-while true do
+while running do
 	parent_window.setVisible( false )
 	main_window.setVisible( false )
 	background_window.setVisible( false )
@@ -1277,5 +1278,7 @@ end
 
 logfile:close()
 
-term.redirect( old_term )
+term.redirect( actual_term )
 term.setCursorPos( 1, 1 )
+
+shell.run( directory .. "/yellowave.lua" )
