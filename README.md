@@ -20,3 +20,5 @@ The easiest way to get Gravity Girl currently is to use @apemanzilla's `gitget`,
 ```bash
 pastebin run W5ZkVYSi viluon CCJam-2016
 ```
+
+And then run the game with the `r` script.
