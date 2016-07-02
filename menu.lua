@@ -1283,4 +1283,4 @@ logfile:close()
 term.redirect( old_term )
 term.setCursorPos( 1, 1 )
 
-shell.run( directory .. "/yellowave.lua" )
+shell.run( directory .. "/yellowave.lua", 1 )

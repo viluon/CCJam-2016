@@ -328,7 +328,7 @@ for i = 1, 20 do
 	saveFrame()
 end
 
-for i = 1, 10 do
+for i = 1, 5 do
 	updateParticles( 0.5 )
 	saveFrame()
 end
