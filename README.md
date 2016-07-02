@@ -13,3 +13,10 @@ Gravity Girl was born as a result of that need (and I thought it'd make a good e
 
 ## A Word of Warning
 Given the limited time for CCJam, I was not able to test everything everywhere. There is still a lot to do, fix, and improve. In other words, Gravity Girl is still very much a work in progress. What matters the most, however, is that the UI was only tested on computers. That is, I didn't try running it on a monitor, turtle, or a PDA. Since pretty much everything counts with `term.getSize()`, it should all scale *up* rather well, but the opposite might not be true.
+
+## Installation
+The easiest way to get Gravity Girl currently is to use @apemanzilla's `gitget`, with this command:
+
+```bash
+pastebin run W5ZkVYSi viluon CCJam-2016
+```
