@@ -92,6 +92,8 @@ term.redirect( main_window )
 local w, h = term.getSize()
 local width, height = parent_window.getSize()
 
+local fall_direction = -1
+
 local modem = peripheral.find( "modem", function( name, object )
 	return object.isWireless()
 end )
@@ -338,14 +340,12 @@ function random_fill()
 
 	if dt > 0.001 then
 		term.setBackgroundColour( colours.black )
-		term.scroll( -1 )
+		term.scroll( fall_direction )
 
-		for y = 1, 1 do
-			for x = 1, w * 0.05 do
-				term.setCursorPos( math.random( 3, w - 1 ), y )
-				term.setBackgroundColour( colours.grey )
-				term.write( " " )
-			end
+		for x = 1, w * 0.05 do
+			term.setCursorPos( math.random( 3, w - 1 ), fall_direction > 0 and h or 1 )
+			term.setBackgroundColour( colours.grey )
+			term.write( " " )
 		end
 		
 		last_pass = os.clock()
@@ -1160,6 +1160,9 @@ while running do
 			end
 
 			save_settings()
+
+		elseif ev[ 2 ] == " " then
+			fall_direction = -fall_direction
 		end
 
 	elseif ev[ 1 ] == "modem_message" then
