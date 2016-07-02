@@ -1,0 +1,6 @@
+( function()
+	return {
+		path = "big_cloud.nfp";
+		width = 49;
+	}
+end )()

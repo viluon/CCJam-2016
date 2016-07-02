@@ -4,7 +4,7 @@
 			x = 1;
 			y = 0;
 
-			width = 32;
+			width = 44;
 			height = 3;
 			colour = 128; -- colours.grey
 		};
@@ -12,7 +12,17 @@
 			x = 1;
 			y = 51;
 
-			width = 32;
+			width = 44;
+			height = 3;
+			colour = 128; -- colours.grey
+		};
+
+		-- Middle piece
+		{
+			x = 5;
+			y = 26;
+
+			width = 25;
 			height = 3;
 			colour = 128; -- colours.grey
 		};

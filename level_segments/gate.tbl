@@ -1,0 +1,62 @@
+( function()
+	return {
+		{
+			x = 1;
+			y = 54;
+
+			width = 22;
+			height = 3;
+			colour = 1024; -- colours.lightGrey
+		};
+		{
+			x = 1;
+			y = 0;
+
+			width = 22;
+			height = 3;
+			colour = 1024; -- colours.lightGrey
+		};
+
+		-- Middle block
+		{
+			x = 22;
+			y = 12;
+
+			width = 2;
+			height = 33;
+			colour = 1024; -- colours.lightGrey
+		};
+
+		-- Little blocks above and below the main one
+		{
+			x = 22;
+			y = 0;
+
+			width = 2;
+			height = 6;
+			colour = 1024; -- colours.lightGrey
+		};
+		{
+			x = 22;
+			y = 51;
+
+			width = 2;
+			height = 6;
+			colour = 1024; -- colours.lightGrey
+		};
+
+		-- Finishing platform
+		{
+			x = 26;
+			y = 26;
+
+			width = 25;
+			height = 3;
+			colour = 2; -- colours.orange
+		};
+
+		type = "middle";
+		follow_up = { "bottom", "top" };
+		background = { "big_cloud" };
+	}
+end )()

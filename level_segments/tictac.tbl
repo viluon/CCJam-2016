@@ -18,7 +18,7 @@
 		};
 
 		type = "top";
-		follow_up = { "top", "bottom" };
+		follow_up = { "top", "middle" };
 		background = { "dark_wires" };
 	}
 end )()

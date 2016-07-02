@@ -75,6 +75,7 @@ for i, name in ipairs( fs.list( segments_dir ) ) do
 	end
 
 	segments[ i ].total_width = max_width
+	segments[ i ].name = name:gsub( "%.tbl$", "" )
 end
 
 local backgrounds_dir = directory .. "/backgrounds/"
@@ -514,7 +515,7 @@ while running do
 			-- Find suitable segments
 			for _, segment_type in ipairs( last_segment.follow_up ) do
 				for i, segment in ipairs( segments ) do
-					if segment.type == segment_type and not possible_follow_ups[ segment ] then
+					if segment.type == segment_type and not possible_follow_ups[ segment ] and ( not last_segment.exclude or not last_segment.exclude[ segment.name ] ) then
 						possible_follow_ups[ segment ] = true
 						possible_follow_ups[ #possible_follow_ups + 1 ] = segment
 					end
