@@ -29,7 +29,7 @@ local SCAN_INTERVAL = 1
 local GAME_CHANNEL = 72
 local ENABLE_LOGGING = true
 local ELEMENT_TIMEOUT = 3
-local JOIN_BUTTON_ANIM_LENGTH = 0.5
+local JOIN_BUTTON_ANIM_LENGTH = 0.3
 
 local math = math
 local term = term
@@ -894,6 +894,10 @@ function launch()
 		local text4 = "Send @viluon this secret code:"
 		term.setCursorPos( width / 2 - #text4 / 2, y - 0 )
 		term.write( text4 )
+
+		local enter_to_continue = "Press Enter to continue"
+		term.setCursorPos( width / 2 - #enter_to_continue / 2, height - 1 )
+		term.write( enter_to_continue )
 
 		term.setBackgroundColour( colours.white )
 		term.setTextColour( colours.black )
