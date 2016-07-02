@@ -31,13 +31,23 @@
 		starter = true;
 		player_positions = {
 			{
-				x = 2;
+				x = 7;
 				y = 4;
 				direction = 1;
 			};
 			{
-				x = 2;
+				x = 7;
 				y = 48;
+				direction = -1;
+			};
+			{
+				x = 7;
+				y = 29;
+				direction = 1;
+			};
+			{
+				x = 7;
+				y = 23;
 				direction = -1;
 			};
 		};
