@@ -108,7 +108,7 @@ local logo_colour = colours.grey
 local logo_coloured = false
 local logo_start_redraw_time = os.clock()
 
-local logo_colours = { colours.lightBlue, colours.yellow, colours.cyan, colours.green, colours.red, colours.magenta }
+local logo_colours = { colours.lightBlue, colours.yellow, colours.cyan, colours.green, colours.pink, colours.magenta }
 
 local logo = {
 	"   xxxx                      x    x              xxxx  x         x  ";
@@ -216,7 +216,7 @@ local launch_settings = {
 		name = "Player Colour";
 		value = 1;
 		options = {
-			colours.red, colours.green, colours.blue, colours.yellow, colours.cyan, colours.magenta
+			colours.pink, colours.green, colours.blue, colours.yellow, colours.cyan, colours.magenta
 		};
 
 		type = "colour";
@@ -380,25 +380,32 @@ function animate_join_button( now )
 
 		-- Check that no other player has our name or colour
 		clash_found = false
-		for ID, player in pairs( selected_game.players ) do
-			if player.name == launch_settings[ 2 ].value or player.colour == launch_settings[ 3 ].options[ launch_settings[ 3 ].value ] then
-				new_colour = colours.red
-				
-				if player.name == launch_settings[ 2 ].value then
-					clash_found = "A player with your name \nhas already connected \nto the game."
-				else
-					local colour_name
-					for name, colour in pairs( colours ) do
-						if colour == player.colour then
-							colour_name = name
-							break
+
+		if #launch_settings[ 2 ].value == 0 or #launch_settings[ 2 ].value:gsub( "[%w_]+", "" ) ~= 0 then
+			clash_found = "Your player name can\nonly contain letters, numbers,\nand underscores, and\ncannot be empty."
+			new_colour = colours.red
+
+		else
+			for ID, player in pairs( selected_game.players ) do
+				if player.name == launch_settings[ 2 ].value or player.colour == launch_settings[ 3 ].options[ launch_settings[ 3 ].value ] then
+					new_colour = colours.red
+					
+					if player.name == launch_settings[ 2 ].value then
+						clash_found = "A player with your name\nhas already connected\nto the game."
+					else
+						local colour_name
+						for name, colour in pairs( colours ) do
+							if colour == player.colour then
+								colour_name = name
+								break
+							end
 						end
+
+						clash_found = "A " .. colour_name .. " player\nhas already connected\nto the game."
 					end
 
-					clash_found = "A " .. colour_name .. " player \nhas already connected \nto the game."
+					break
 				end
-
-				break
 			end
 		end
 	end
