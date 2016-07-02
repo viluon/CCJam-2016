@@ -39,8 +39,9 @@ local directory = fs.getDir( shell.getRunningProgram() )
 local logfile = io.open( "/menu_log.txt", "a" )
 
 local capture
-local old_term
+local old_term = actual_term
 
+--[[
 old_term = {
 	cursor_pos = { actual_term.getCursorPos() };
 	data = {};
@@ -78,6 +79,7 @@ old_term = {
 	isColour = actual_term.isColour;
 	clear = actual_term.clear;
 }
+]]
 
 local	random_fill, draw_menu, launch, play, back_from_play, easeInOutQuad, update_elements, draw_settings, search, redraw_logo,
 		randomize_logo_colour, draw_search_results, back_from_search, hide_secrets, scan_for_games, log, save_settings, load_settings,
@@ -1278,7 +1280,7 @@ end
 
 logfile:close()
 
-term.redirect( actual_term )
+term.redirect( old_term )
 term.setCursorPos( 1, 1 )
 
 shell.run( directory .. "/yellowave.lua" )
