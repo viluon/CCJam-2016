@@ -81,7 +81,7 @@ old_term = {
 
 local	random_fill, draw_menu, launch, play, back_from_play, easeInOutQuad, update_elements, draw_settings, search, redraw_logo,
 		randomize_logo_colour, draw_search_results, back_from_search, hide_secrets, scan_for_games, log, save_settings, load_settings,
-		animate_join_button, ease_linear, show_message
+		animate_join_button, ease_linear, show_message, validate_player_name
 
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
 local main_window = blittle.createWindow( parent_window )
@@ -142,7 +142,13 @@ local menu = {
 			if state == "main_menu" then
 				return play()
 			elseif state == "play_menu" then
-				return launch()
+				local ok, msg = validate_player_name()
+
+				if not ok then
+					return show_message( msg )
+				else
+					return launch()
+				end
 			elseif state == "search_menu" then
 				back_from_search()
 				return play()
@@ -184,6 +190,41 @@ local menu = {
 			start_time = -1;
 			pos = 4;
 		};
+	};
+
+	{
+		name = "Help";
+		fn = function()
+			if state == "main_menu" then
+				return show_message [[
+Press spacebar to switch
+direction of gravity. Set
+your name and colour in
+the Play menu and then
+either start a game or
+join one!
+]]
+			elseif state == "play_menu" then
+				return show_message [[
+Set your player name
+and colour to whatever
+you like, then click the
+Play button at the left
+again. Remember, spacebar
+switches gravity!
+]]
+			elseif state == "search_menu" then
+				return show_message [[
+This is the search menu.
+Here you can see a list
+of nearby games waiting
+for players. To join a
+game, click it in the list
+and then click "Join"
+at the left of the screen.
+]]
+			end
+		end;
 	};
 
 	{
@@ -381,8 +422,10 @@ function animate_join_button( now )
 		-- Check that no other player has our name or colour
 		clash_found = false
 
-		if #launch_settings[ 2 ].value == 0 or #launch_settings[ 2 ].value:gsub( "[%w_]+", "" ) ~= 0 then
-			clash_found = "Your player name can\nonly contain letters, numbers,\nand underscores, and\ncannot be empty."
+		local ok, msg = validate_player_name()
+
+		if not ok then
+			clash_found = msg
 			new_colour = colours.red
 
 		else
@@ -447,11 +490,11 @@ function draw_messages()
 		end
 
 		parent_window.setTextColour( colours.lightGrey )
-		parent_window.setCursorPos( width / 2 - longest_line / 2 - 2, height / 2 - #lines / 2 - 1 )
+		parent_window.setCursorPos( width / 2 - longest_line / 2 - 2, height / 2 - #lines / 2 )
 		parent_window.write( string.rep( "\7", longest_line + 4 ) )
 
 		for i = 1, #lines do
-			parent_window.setCursorPos( width / 2 - longest_line / 2 - 2, height / 2 - #lines / 2 + i - 1 )
+			parent_window.setCursorPos( width / 2 - longest_line / 2 - 2, height / 2 - #lines / 2 + i )
 			parent_window.write( "\7 " )
 
 			parent_window.setTextColour( colours.white )
@@ -461,7 +504,7 @@ function draw_messages()
 			parent_window.write( " \7" )
 		end
 
-		parent_window.setCursorPos( width / 2 - longest_line / 2 - 2, height / 2 + #lines / 2 )
+		parent_window.setCursorPos( width / 2 - longest_line / 2 - 2, height / 2 + #lines / 2 + 1 )
 		parent_window.write( string.rep( "\7", longest_line + 4 ) )
 	end
 end
@@ -627,6 +670,16 @@ function scan_for_games( now )
 		} )
 
 		last_scan = now
+	end
+end
+
+--- Check that the current player name doesn't contain invalid characters
+-- @return True if the player name is okay, nil and an error message otherwise
+function validate_player_name()
+	if #launch_settings[ 2 ].value == 0 or #launch_settings[ 2 ].value:gsub( "[%w_]+", "" ) ~= 0 then
+		return nil, "Your player name can\nonly contain letters, numbers,\nand underscores, and\ncannot be empty."
+	else
+		return true
 	end
 end
 
