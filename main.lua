@@ -19,6 +19,7 @@ local PLAYER_H_SPEED = 5
 local PLAYER_REFRESH_INTERVAL = 0.2
 
 local old_term = term.current()
+local width, height = old_term.getSize()
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
 local main_window = blittle.createWindow( parent_window, nil, nil, nil, nil, false )
 
@@ -637,8 +638,6 @@ while running do
 	last_time = now
 end
 
-parent_window.setTextColour( colours.white )
-parent_window.setBackgroundColour( colours.black )
 
 term.redirect( old_term )
 term.clear()
@@ -646,7 +645,23 @@ term.setCursorPos( 1, 1 )
 
 logfile:close()
 
-print( "Game over!\nWinner: " .. ( winner and winner.name or "nobody" ) .. "\nEnter to continue" )
+term.setTextColour( colours.white )
+term.setBackgroundColour( colours.grey )
+term.clear()
+
+local heading = "Game over!"
+term.setCursorPos( width / 2 - #heading / 2, 2 )
+term.write( heading )
+
+local winner_text = "Winner: " .. ( winner and winner.name or "nobody" )
+term.setCursorPos( width / 2 - #winner_text / 2, 4 )
+term.write( winner_text )
+
+local enter_to_cont = "Enter to continue"
+term.setCursorPos( width / 2 - #enter_to_cont / 2, height - 2 )
+term.write( enter_to_cont )
+
+term.setCursorPos( 1, height )
 read()
 
 os.queueEvent( "x" )
