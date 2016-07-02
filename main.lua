@@ -96,6 +96,7 @@ if broadcast then
 
 	starter = starters[ math.random( 1, #starters ) ]
 
+	sleep( 0.5 )
 	modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
 		Gravity_Girl = "best game ever";
 		type = "starter";
@@ -112,9 +113,17 @@ else
 
 		local message = ev[ 5 ]
 
-		if ev[ 3 ] == GAME_CHANNEL and type( message ) == "table" and message.Gravity_Girl == "best game ever" and message.game_ID == local_game then
+		if ev[ 3 ] == GAME_CHANNEL and type( message ) == "table" and message.Gravity_Girl == "best game ever" and message.game_ID == local_game and message.type == "starter" then
 			received = true
 			starter = message.data
+
+			modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+				Gravity_Girl = "best game ever";
+				type = "starter_response";
+
+				game_ID = local_game;
+				sender = local_player;
+			} )
 		end
 	end
 end
