@@ -676,8 +676,10 @@ end
 --- Check that the current player name doesn't contain invalid characters
 -- @return True if the player name is okay, nil and an error message otherwise
 function validate_player_name()
-	if #launch_settings[ 2 ].value == 0 or #launch_settings[ 2 ].value:gsub( "[%w_]+", "" ) ~= 0 then
-		return nil, "Your player name can\nonly contain letters, numbers,\nand underscores, and\ncannot be empty."
+	if #launch_settings[ 2 ].value == 0 then
+		return nil, "Your player name\ncannot be empty."
+	elseif #launch_settings[ 2 ].value:gsub( "[%w_]+", "" ) ~= 0 then
+		return nil, "Your player name can\nonly contain letters, numbers,\nand underscores."
 	else
 		return true
 	end
