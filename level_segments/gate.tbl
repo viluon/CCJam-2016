@@ -6,7 +6,7 @@
 
 			width = 22;
 			height = 3;
-			colour = 1024; -- colours.lightGrey
+			colour = 16384; -- colours.red
 		};
 		{
 			x = 1;
@@ -14,7 +14,7 @@
 
 			width = 22;
 			height = 3;
-			colour = 1024; -- colours.lightGrey
+			colour = 16384; -- colours.red
 		};
 
 		-- Middle block
@@ -24,7 +24,7 @@
 
 			width = 2;
 			height = 33;
-			colour = 1024; -- colours.lightGrey
+			colour = 16384; -- colours.red
 		};
 
 		-- Little blocks above and below the main one
@@ -34,7 +34,7 @@
 
 			width = 2;
 			height = 6;
-			colour = 1024; -- colours.lightGrey
+			colour = 16384; -- colours.red
 		};
 		{
 			x = 22;
@@ -42,7 +42,7 @@
 
 			width = 2;
 			height = 6;
-			colour = 1024; -- colours.lightGrey
+			colour = 16384; -- colours.red
 		};
 
 		-- Finishing platform
