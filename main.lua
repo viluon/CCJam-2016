@@ -618,17 +618,27 @@ while running do
 
 	main_window.setVisible( true )
 
+	--[[
 	-- Do overlay stuff here
 	parent_window.setCursorPos( 1, 1 )
 	parent_window.write( local_player.velocity.y )
 
 	parent_window.setCursorPos( 1, 2 )
 	parent_window.write( local_player.dead and "dead" or "alive" )
+	--]]
+
+	parent_window.setCursorPos( 1, 1 )
+	parent_window.setTextColour( colours.black )
+	parent_window.setBackgroundColour( colours.white )
+	parent_window.write( "Score: " .. math.floor( local_player.position.x ) )
 
 	parent_window.setVisible( true )
 
 	last_time = now
 end
+
+parent_window.setTextColour( colours.white )
+parent_window.setBackgroundColour( colours.black )
 
 term.redirect( old_term )
 term.clear()
