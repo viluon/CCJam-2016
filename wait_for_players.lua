@@ -310,6 +310,7 @@ while n_players < total_players do
 					data = {
 						connected = n_players;
 						max = total_players;
+						players = players;
 					};
 				} )
 

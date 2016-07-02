@@ -29,6 +29,7 @@ local SCAN_INTERVAL = 1
 local GAME_CHANNEL = 72
 local ENABLE_LOGGING = true
 local ELEMENT_TIMEOUT = 3
+local JOIN_BUTTON_ANIM_LENGTH = 0.5
 
 local math = math
 local term = term
@@ -79,7 +80,8 @@ old_term = {
 }
 
 local	random_fill, draw_menu, launch, play, back_from_play, easeInOutQuad, update_elements, draw_settings, search, redraw_logo,
-		randomize_logo_colour, draw_search_results, back_from_search, hide_secrets, scan_for_games, log, save_settings, load_settings
+		randomize_logo_colour, draw_search_results, back_from_search, hide_secrets, scan_for_games, log, save_settings, load_settings,
+		animate_join_button, ease_linear, show_message
 
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
 local main_window = blittle.createWindow( parent_window )
@@ -129,6 +131,9 @@ local selected_secret_settings_element
 local selected_search_result
 
 local search_results = {}
+local clash_found = false
+
+local messages = {}
 
 local menu = {
 	{
@@ -148,7 +153,7 @@ local menu = {
 	{
 		name = "Join";
 		fn = function()
-			if state == "search_menu" and modem then
+			if state == "search_menu" and modem and not clash_found then
 				local selection_exists = false
 
 				-- Check that the search result actually exists
@@ -160,8 +165,12 @@ local menu = {
 				end
 
 				if selection_exists then
-					return launch()
+					launch()
+					selected_game = nil
 				end
+
+			elseif state == "search_menu" and clash_found then
+				return show_message( clash_found )
 
 			elseif state == "main_menu" then
 				return search()
@@ -170,6 +179,11 @@ local menu = {
 				return search()
 			end
 		end;
+		animation = {
+			colour_a = colours.white;
+			start_time = -1;
+			pos = 4;
+		};
 	};
 
 	{
@@ -264,6 +278,14 @@ function easeInOutQuad( t, b, c, d )
 	end
 end
 
+function ease_linear( time, begin, change, duration )
+	if time > duration then
+		return begin + change
+	end
+
+	return ( time / duration ) * change + begin
+end
+
 local last_pass = -1
 --- Fill the background with random crap
 -- @return nil
@@ -347,20 +369,120 @@ function save_settings()
 	f:close()
 end
 
+--- Animate the Join button text colour
+-- @param now Current time
+-- @return nil
+function animate_join_button( now )
+	local new_colour = colours.white
+
+	if selected_game then
+		new_colour = colours.green
+
+		-- Check that no other player has our name or colour
+		clash_found = false
+		for ID, player in pairs( selected_game.players ) do
+			if player.name == launch_settings[ 2 ].value or player.colour == launch_settings[ 3 ].options[ launch_settings[ 3 ].value ] then
+				new_colour = colours.red
+				
+				if player.name == launch_settings[ 2 ].value then
+					clash_found = "A player with your name \nhas already connected \nto the game."
+				else
+					local colour_name
+					for name, colour in pairs( colours ) do
+						if colour == player.colour then
+							colour_name = name
+							break
+						end
+					end
+
+					clash_found = "A " .. colour_name .. " player \nhas already connected \nto the game."
+				end
+
+				break
+			end
+		end
+	end
+
+	for i, button in ipairs( menu ) do
+		if button.name:lower() == "join" then
+			if button.animation.colour_a ~= new_colour then
+				button.animation.colour_b = button.animation.colour_a
+				button.animation.start_time = now
+				button.animation.colour_a = new_colour
+			end
+
+			button.animation.pos = ease_linear( now - button.animation.start_time, 1, 3, JOIN_BUTTON_ANIM_LENGTH )
+
+			break
+		end
+	end
+end
+
+--- Display a message box
+-- @param text description
+-- @return nil
+function show_message( text )
+	messages[ #messages + 1 ] = text
+end
+
+--- Update and draw active messages
+-- @return nil
+function draw_messages()
+	for i, message in ipairs( messages ) do
+		message = message .. "\n"
+
+		local lines = {}
+		local longest_line = -1
+
+		for line in string.gmatch( message, "[^\n]+\n" ) do
+			lines[ #lines + 1 ] = line
+			longest_line = math.max( longest_line, #line )
+		end
+
+		parent_window.setTextColour( colours.lightGrey )
+		parent_window.setCursorPos( width / 2 - longest_line / 2 - 2, height / 2 - #lines / 2 - 1 )
+		parent_window.write( string.rep( "\7", longest_line + 4 ) )
+
+		for i = 1, #lines do
+			parent_window.setCursorPos( width / 2 - longest_line / 2 - 2, height / 2 - #lines / 2 + i - 1 )
+			parent_window.write( "\7 " )
+
+			parent_window.setTextColour( colours.white )
+			parent_window.write( lines[ i ] .. string.rep( " ", longest_line - #lines[ i ] ) )
+
+			parent_window.setTextColour( colours.lightGrey )
+			parent_window.write( " \7" )
+		end
+
+		parent_window.setCursorPos( width / 2 - longest_line / 2 - 2, height / 2 + #lines / 2 )
+		parent_window.write( string.rep( "\7", longest_line + 4 ) )
+	end
+end
+
 --- Draw the menu elements
 -- @return nil
 function draw_menu()
 	parent_window.setBackgroundColour( colours.black )
-	parent_window.setTextColour( colours.white )
 
 	for i, element in ipairs( menu ) do
+		parent_window.setTextColour( colours.white )
 		parent_window.setCursorPos( element.position, height / 2 - #menu + i * 2 )
 
-		if element.name == "Exit" then
+		if element.name:lower() == "exit" then
 			if state == "main_menu" then
 				parent_window.write( "Exit" )
 			else
 				parent_window.write( "Back" )
+			end
+		elseif element.animation then
+			parent_window.setTextColour( element.animation.colour_a )
+			for i = 1, element.animation.pos do
+				parent_window.write( element.name:sub( i, i ) )
+			end
+
+			parent_window.setTextColour( element.animation.colour_b )
+			for i = math.floor( element.animation.pos + 1 ), #element.name do
+				parent_window.write( element.name:sub( i, i ) )
 			end
 		else
 			parent_window.write( element.name )
@@ -801,82 +923,88 @@ while true do
 		end_queued = false
 
 	elseif ev[ 1 ] == "mouse_click" then
-		local i = ( ev[ 4 ] - math.floor( height / 2 ) + #menu ) / 2
+		if #messages > 0 then
+			messages[ #messages ] = nil
 
-		if menu[ i ] and ev[ 3 ] >= math.floor( menu[ i ].position ) and ev[ 3 ] < math.floor( menu[ i ].position + #menu[ i ].name ) then
-			if state ~= "search_menu" then
-				selected_game = nil
-			end
+		else
+			local i = ( ev[ 4 ] - math.floor( height / 2 ) + #menu ) / 2
 
-			hide_secrets( now )
-			menu[ i ].fn()
+			-- Check for a menu element hit
+			if menu[ i ] and ev[ 3 ] >= math.floor( menu[ i ].position ) and ev[ 3 ] < math.floor( menu[ i ].position + #menu[ i ].name ) then
+				hide_secrets( now )
+				menu[ i ].fn()
 
-			save_settings()
+				if state ~= "search_menu" then
+					selected_game = nil
+				end
 
-		elseif state == "play_menu" then
-			if ev[ 3 ] == width and ev[ 4 ] == 1 then
-				-- Secret advanced settings menu!
-				if secret_menu then
-					hide_secrets( now )
+				save_settings()
+
+			elseif state == "play_menu" then
+				if ev[ 3 ] == width and ev[ 4 ] == 1 then
+					-- Secret advanced settings menu!
+					if secret_menu then
+						hide_secrets( now )
+
+					else
+						-- Let the secrets slide in (from top)
+						for i, element in ipairs( secret_settings ) do
+							element.target_position = height / 2 - #secret_settings / 2 + i * 2
+
+							element.original_position = element.position
+							element.start_anim_time = now
+						end
+
+						secret_menu = true
+
+					end
+
+				elseif secret_menu then
+					-- Check whether we hit a *secret* setting element
+					for i, element in ipairs( secret_settings ) do
+						if math.floor( element.position ) == ev[ 4 ] then
+							selected_secret_settings_element = element
+
+							if element.options then
+								if ev[ 3 ] >= width / 2 and ev[ 3 ] <= width / 2 + 3 then
+									element.value = math.max( 1, element.value - 1 )
+								elseif ev[ 3 ] >= width / 2 then
+									element.value = math.min( #element.options, element.value + 1 )
+								end
+							end
+
+							break
+						end
+					end
 
 				else
-					-- Let the secrets slide in (from top)
-					for i, element in ipairs( secret_settings ) do
-						element.target_position = height / 2 - #secret_settings / 2 + i * 2
+					-- Check whether we hit a setting element
+					for i, element in ipairs( launch_settings ) do
+						if math.floor( element.position ) == ev[ 4 ] then
+							selected_settings_element = element
 
-						element.original_position = element.position
-						element.start_anim_time = now
+							if element.options then
+								if ev[ 3 ] >= width / 2 and ev[ 3 ] <= width / 2 + 3 then
+									element.value = math.max( 1, element.value - 1 )
+								elseif ev[ 3 ] >= width / 2 then
+									element.value = math.min( #element.options, element.value + 1 )
+								end
+							end
+
+							break
+						end
 					end
-
-					secret_menu = true
-
 				end
 
-			elseif secret_menu then
-				-- Check whether we hit a *secret* setting element
-				for i, element in ipairs( secret_settings ) do
-					if math.floor( element.position ) == ev[ 4 ] then
-						selected_secret_settings_element = element
-
-						if element.options then
-							if ev[ 3 ] >= width / 2 and ev[ 3 ] <= width / 2 + 3 then
-								element.value = math.max( 1, element.value - 1 )
-							elseif ev[ 3 ] >= width / 2 then
-								element.value = math.min( #element.options, element.value + 1 )
-							end
-						end
+			elseif state == "search_menu" then
+				-- Check whether we hit a search result entry
+				for i, element in ipairs( search_results ) do
+					if math.floor( element.position ) == ev[ 4 ] and not element.not_clickable then
+						selected_search_result = element
+						selected_game = element.game_details
 
 						break
 					end
-				end
-
-			else
-				-- Check whether we hit a setting element
-				for i, element in ipairs( launch_settings ) do
-					if math.floor( element.position ) == ev[ 4 ] then
-						selected_settings_element = element
-
-						if element.options then
-							if ev[ 3 ] >= width / 2 and ev[ 3 ] <= width / 2 + 3 then
-								element.value = math.max( 1, element.value - 1 )
-							elseif ev[ 3 ] >= width / 2 then
-								element.value = math.min( #element.options, element.value + 1 )
-							end
-						end
-
-						break
-					end
-				end
-			end
-
-		elseif state == "search_menu" then
-			-- Check whether we hit a search result entry
-			for i, element in ipairs( search_results ) do
-				if math.floor( element.position ) == ev[ 4 ] and not element.not_clickable then
-					selected_search_result = element
-					selected_game = element.game_details
-
-					break
 				end
 			end
 		end
@@ -962,6 +1090,10 @@ while true do
 			hide_secrets( now )
 			menu[ #menu ].fn()
 
+			if state ~= "search_menu" then
+				selected_game = nil
+			end
+
 			save_settings()
 		end
 
@@ -988,6 +1120,7 @@ while true do
 										connected = message.data.connected;
 										max = message.data.max;
 										game_ID = message.game_ID;
+										players = message.data.players;
 									};
 
 									position = height + #search_results;
@@ -1039,6 +1172,7 @@ while true do
 
 	random_fill()
 	redraw_logo( now )
+	animate_join_button( now )
 
 	main_window.setVisible( true )
 	background_window.setVisible( true )
@@ -1064,6 +1198,8 @@ while true do
 	draw_search_results()
 	draw_secret_settings()
 	draw_menu()
+
+	draw_messages()
 
 	if state == "play_menu" then
 		parent_window.setCursorPos( width, 1 )
