@@ -1,6 +1,10 @@
 
 -- Gravity Girl, a Gravity Guy clone by @viluon
 
+if not ( term.isColour and term.isColour() ) then
+	error( "Gravity Girl needs an advanced computer!", 0 )
+end
+
 -- Built with [BLittle](http://www.computercraft.info/forums2/index.php?/topic/25354-cc-176-blittle-api/) by Bomb Bloke
 if not fs.exists "blittle" then shell.run "pastebin get ujchRSnU blittle" end
 if not blittle then os.loadAPI "blittle" end
@@ -432,7 +436,7 @@ function animate_join_button( now )
 			new_colour = colours.red
 
 		else
-			for ID, player in pairs( selected_game.players ) do
+			for ID, player in pairs( selected_game.players or {} ) do
 				if player.name == launch_settings[ 2 ].value or player.colour == launch_settings[ 3 ].options[ launch_settings[ 3 ].value ] then
 					new_colour = colours.red
 					
