@@ -24,7 +24,7 @@ local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
 local main_window = blittle.createWindow( parent_window, nil, nil, nil, nil, false )
 
 local	draw, draw_player, update_player, round, log, deepcopy, draw_background, setting, refresh_players, convert_image, draw_image, update_level,
-		update_backgrounds
+		update_backgrounds, transmit
 
 local local_player
 local _, winner
@@ -98,7 +98,7 @@ if broadcast then
 	starter = starters[ math.random( 1, #starters ) ]
 
 	sleep( 0.5 )
-	modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+	transmit( {
 		Gravity_Girl = "best game ever";
 		type = "starter";
 
@@ -118,7 +118,7 @@ else
 			received = true
 			starter = message.data
 
-			modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+			transmit( {
 				Gravity_Girl = "best game ever";
 				type = "starter_response";
 
@@ -176,6 +176,15 @@ function round( n, places )
 	return math.floor( n * mult + 0.5 ) / mult
 end
 
+--- Transmit a Gravity Girl packet
+-- @param data description
+-- @return nil
+function transmit( data )
+	if modem then
+		return modem.transmit( GAME_CHANNEL, GAME_CHANNEL, data )
+	end
+end
+
 --- Get the value of a setting by name
 -- @param name	The name of the setting to search for
 -- @return any	The value of the setting, either a string when it's a string setting,
@@ -202,7 +211,7 @@ local last_player_refresh = -1
 function refresh_players( now )
 	if broadcast and now - last_player_refresh > PLAYER_REFRESH_INTERVAL then
 		last_player_refresh = now
-		modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+		transmit( {
 			Gravity_Girl = "best game ever";
 			type = "player_refresh";
 
@@ -328,7 +337,7 @@ function update_player( player, dt )
 		world:remove( player.ID )
 
 		if player == local_player then
-			modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+			transmit( {
 				Gravity_Girl = "best game ever";
 				type = "player_update";
 
@@ -446,8 +455,7 @@ while running do
 	if ev[ 1 ] == "key" then
 		if ev[ 2 ] == keys.space and local_player.can_switch then
 			local_player.speed = -local_player.speed
-
-			modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+			transmit( {
 				Gravity_Girl = "best game ever";
 				type = "player_update";
 
@@ -541,7 +549,7 @@ while running do
 				obj.x = obj.x + furthest_block_generated
 
 				if broadcast then
-					modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+					transmit( {
 						Gravity_Girl = "best game ever";
 						type = "world_update_add";
 
@@ -564,7 +572,7 @@ while running do
 				bg.pos = furthest_block_generated + i
 				active_backgrounds[ #active_backgrounds + 1 ] = bg
 
-				modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+				transmit( {
 					Gravity_Girl = "best game ever";
 					type = "background_add";
 
