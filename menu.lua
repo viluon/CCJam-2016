@@ -267,7 +267,7 @@ local launch_settings = {
 		name = "Player Colour";
 		value = 1;
 		options = {
-			colours.pink, colours.green, colours.blue, colours.yellow, colours.cyan, colours.magenta
+			colours.green, colours.blue, colours.yellow, colours.cyan, colours.magenta, colours.pink
 		};
 
 		type = "colour";
