@@ -639,7 +639,7 @@ function draw_search_results()
 			parent_window.write( element.game_details.connected .. "/" .. element.game_details.max )
 
 		elseif #search_results == 1 then
-			local text = "Searching for games..."
+			local text = modem and "Searching for games..." or element.name
 
 			parent_window.setCursorPos( width / 2 - #text / 2, element.position )
 			parent_window.write( text )
