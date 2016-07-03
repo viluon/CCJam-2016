@@ -26,11 +26,11 @@ And then run the game with the `r` script (all that it really does is it launche
 Optionally, if you'd like to try out the *latest* version of the game, you can get yourself the `after-jam` branch, which includes a few patches to bugs included in the CCJam release.
 
 ```bash
-pastebin run W5ZkVYSi viluon CCJam-2016 branch=after-jam
+pastebin run W5ZkVYSi viluon CCJam-2016 after-jam
 ```
 
 The `path` variable of `gitget` CLI can be used to install Gravity Girl somewhere else than root. All code should count with relative paths, but the functionality has not been tested yet.
 
 ```bash
-pastebin run W5ZkVYSi viluon CCJam-2016 branch=after-jam "path=/Gravity Girl/"
+pastebin run W5ZkVYSi viluon CCJam-2016 after-jam "/Gravity Girl/"
 ```
