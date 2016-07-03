@@ -19,6 +19,7 @@ local INITIAL_SCROLL_SPEED = 2
 local PLAYER_BASIC_H_SPEED = 10
 local PLAYER_H_SPEED = 5
 local PLAYER_REFRESH_INTERVAL = 0.2
+local FPS_COUNTER_RESET_INTERVAL = 0.5
 
 local old_term = term.current()
 local width, height = old_term.getSize()
@@ -439,6 +440,9 @@ end
 local last_time = os.clock()
 local end_queued = false
 local running = true
+local n_frames = 0
+local last_n_frames = 0
+local counter_reset = last_time
 
 while running do
 	parent_window.setVisible( false )
@@ -637,12 +641,25 @@ while running do
 	parent_window.write( local_player.dead and "dead" or "alive" )
 	--]]
 
-	parent_window.setCursorPos( 1, 1 )
 	parent_window.setTextColour( colours.black )
 	parent_window.setBackgroundColour( colours.white )
+
+	parent_window.setCursorPos( 1, 1 )
 	parent_window.write( "Score: " .. math.floor( local_player.position.x ) )
 
+	parent_window.setCursorPos( 1, 2 )
+	parent_window.write( "FPS: " .. math.floor( last_n_frames / FPS_COUNTER_RESET_INTERVAL ) )
+
 	parent_window.setVisible( true )
+
+	n_frames = n_frames + 1
+
+	if now - counter_reset > FPS_COUNTER_RESET_INTERVAL then
+		counter_reset = now
+
+		last_n_frames = n_frames
+		n_frames = 0
+	end
 
 	last_time = now
 end
