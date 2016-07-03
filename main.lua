@@ -84,6 +84,15 @@ local backgrounds_dir = directory .. "/backgrounds/"
 local starters = {}
 local starter
 
+--- Transmit a Gravity Girl packet
+-- @param data description
+-- @return nil
+function transmit( data )
+	if modem then
+		return modem.transmit( GAME_CHANNEL, GAME_CHANNEL, data )
+	end
+end
+
 if broadcast then
 	for i, segment in ipairs( segments ) do
 		if segment.starter then
@@ -174,15 +183,6 @@ end
 function round( n, places )
 	local mult = 10 ^ ( places or 0 )
 	return math.floor( n * mult + 0.5 ) / mult
-end
-
---- Transmit a Gravity Girl packet
--- @param data description
--- @return nil
-function transmit( data )
-	if modem then
-		return modem.transmit( GAME_CHANNEL, GAME_CHANNEL, data )
-	end
 end
 
 --- Get the value of a setting by name
