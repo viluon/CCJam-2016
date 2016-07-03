@@ -5,8 +5,10 @@ if not ( term.isColour and term.isColour() ) then
 	error( "Gravity Girl needs an advanced computer!", 0 )
 end
 
+local directory = fs.getDir( shell.getRunningProgram() )
+
 -- Built with [BLittle](http://www.computercraft.info/forums2/index.php?/topic/25354-cc-176-blittle-api/) by Bomb Bloke
-if not fs.exists "blittle" then shell.run "pastebin get ujchRSnU blittle" end
+if not fs.exists "/blittle" then shell.run "pastebin get ujchRSnU /blittle" end
 if not blittle then os.loadAPI "blittle" end
 
 -- The following disclaimer applies to the easeInOutQuad function, defined further down the file, which has been taken (with slight modifications)
@@ -39,8 +41,7 @@ local math = math
 local term = term
 
 local actual_term = term.current()
-local directory = fs.getDir( shell.getRunningProgram() )
-local logfile = io.open( "/menu_log.txt", "a" )
+local logfile = io.open( directory .. "/menu_log.txt", "a" )
 
 local capture
 local old_term = actual_term
@@ -1294,4 +1295,4 @@ logfile:close()
 term.redirect( old_term )
 term.setCursorPos( 1, 1 )
 
-shell.run( directory .. "/yellowave.lua", 1 )
+shell.run( "yellowave.lua", 1 )

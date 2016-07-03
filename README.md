@@ -29,7 +29,7 @@ Optionally, if you'd like to try out the *latest* version of the game, you can g
 pastebin run W5ZkVYSi viluon CCJam-2016 after-jam
 ```
 
-The `path` variable of `gitget` CLI can be used to install Gravity Girl somewhere else than root. All code should count with relative paths, but the functionality has not been tested yet.
+The `path` variable of `gitget` CLI can be used to install Gravity Girl somewhere else than root.
 
 ```bash
 pastebin run W5ZkVYSi viluon CCJam-2016 after-jam "/Gravity Girl/"

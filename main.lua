@@ -1,11 +1,13 @@
 
 -- Gravity Girl, a Gravity Guy clone by @viluon
 
+local directory = fs.getDir( shell.getRunningProgram() )
+
 -- Built with [BLittle](http://www.computercraft.info/forums2/index.php?/topic/25354-cc-176-blittle-api/) by Bomb Bloke
-if not fs.exists "blittle" then shell.run "pastebin get ujchRSnU blittle" end
+if not fs.exists "/blittle" then shell.run "pastebin get ujchRSnU /blittle" end
 if not blittle then os.loadAPI "blittle" end
 -- and [bump.lua](https://github.com/kikito/bump.lua) by kikito
-local bump = dofile "bump.lua"
+local bump = dofile( directory .. "/bump.lua" )
 local logfile = io.open( "/log.txt", "a" )
 
 local arguments = ( { ... } )[ 1 ]
@@ -59,7 +61,6 @@ local segments = {}
 local backgrounds = {}
 local active_backgrounds = {}
 
-local directory = fs.getDir( shell.getRunningProgram() )
 local segments_dir = directory .. "/level_segments/"
 
 for i, name in ipairs( fs.list( segments_dir ) ) do
@@ -409,7 +410,7 @@ for i, name in ipairs( fs.list( backgrounds_dir ) ) do
 		local info = textutils.unserialise( contents )
 
 		backgrounds[ name:gsub( "%.bg$", "" ) ] = {
-			data = convert_image( paintutils.loadImage( shell.resolve( backgrounds_dir .. info.path ) ) );
+			data = convert_image( paintutils.loadImage( backgrounds_dir .. "/" .. info.path ) );
 			width = info.width;
 			height = info.height;
 		}

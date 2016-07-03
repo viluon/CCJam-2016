@@ -1,7 +1,9 @@
 
 local old_term = term.current()
 
-local f = io.open( "menu.lua", "r" )
+local directory = fs.getDir( shell.getRunningProgram() )
+
+local f = io.open( directory .. "/menu.lua", "r" )
 local contents = f:read( "*a" )
 f:close()
 
