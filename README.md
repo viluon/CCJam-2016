@@ -21,4 +21,16 @@ The easiest way to get Gravity Girl currently is to use @apemanzilla's `gitget`,
 pastebin run W5ZkVYSi viluon CCJam-2016
 ```
 
-And then run the game with the `r` script.
+And then run the game with the `r` script (all that it really does is it launches `menu.lua` in a `pcall`).
+
+Optionally, if you'd like to try out the *latest* version of the game, you can get yourself the `after-jam` branch, which includes a few patches to bugs included in the CCJam release.
+
+```bash
+pastebin run W5ZkVYSi viluon CCJam-2016 branch=after-jam
+```
+
+The `path` variable of `gitget` CLI can be used to install Gravity Girl somewhere else than root. All code should count with relative paths, but the functionality has not been tested yet.
+
+```bash
+pastebin run W5ZkVYSi viluon CCJam-2016 branch=after-jam "path=/Gravity Girl/"
+```
