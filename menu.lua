@@ -224,15 +224,33 @@ again. Remember, spacebar
 switches gravity!
 ]]
 			elseif state == "search_menu" then
-				return show_message [[
+				if not selected_search_result then
+					return show_message [[
 This is the search menu.
 Here you can see a list
 of nearby games waiting
 for players. To join a
-game, click it in the list
-and then click "Join"
+game, click on it in the
+list and then click "Join"
 at the left of the screen.
 ]]
+				else
+					if not clash_found then
+						return show_message [[
+Click the green Join
+button to jump into
+the game!
+]]
+					else
+						return show_message [[
+Click the Play button
+to switch to the
+settings menu and edit
+your name and colour
+appropriately.
+]]
+					end
+				end
 			end
 		end;
 	};
