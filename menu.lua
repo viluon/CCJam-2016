@@ -1,6 +1,8 @@
 
 -- Gravity Girl, a Gravity Guy clone by @viluon
 
+shell.run( "move", "/startup", "/_startup" )
+
 if not ( term.isColour and term.isColour() ) then
 	error( "Gravity Girl needs an advanced computer!", 0 )
 end
