@@ -3,7 +3,9 @@
 --	viluon's visual signature, improved approach
 --	Uses the BLittle API by Bomb Bloke
 
-if not fs.exists "blittle" then shell.run( "pastebin get ujchRSnU blittle" ) end
+local directory = fs.getDir( shell.getRunningProgram() )
+
+if not fs.exists "/blittle" then shell.run( "pastebin get ujchRSnU /blittle" ) end
 if not blittle then
 	os.loadAPI "blittle"
 end
@@ -308,7 +310,7 @@ end
 
 -- Compute
 
-loadInitialFrame( "/frames/viluon.frm" )
+loadInitialFrame( directory .. "/frames/viluon.frm" )
 
 xOffsetImage = w / 2 - ( biggestX / 2 ) / 2
 yOffsetImage = h / 2 - ( biggestY / 3 ) / 2

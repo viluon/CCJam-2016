@@ -26,7 +26,7 @@ local modem = arguments.modem
 local selected_game = arguments.selected_game
 
 local	launch, setting, randomize_loading_hint, draw_background, update_particles, draw_loading_hint, log, request_game_info,
-		ping_players, list_players
+		ping_players, list_players, transmit
 
 local old_term = term.current()
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
@@ -75,11 +75,20 @@ arguments.players = players
 
 local local_game
 
+--- Transmit a Gravity Girl packet
+-- @param data description
+-- @return nil
+function transmit( data )
+	if modem then
+		return modem.transmit( GAME_CHANNEL, GAME_CHANNEL, data )
+	end
+end
+
 if not arguments.selected_game then
 	local_game = tostring( {} ) .. math.random( 1, 2 ^ 10 )
 else
 	local_game = arguments.selected_game.game_ID
-	modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+	transmit( {
 		Gravity_Girl = "best game ever";
 		type = "game_join";
 
@@ -126,7 +135,7 @@ local last_game_info_request = -1
 function request_game_info( now )
 	if selected_game and now - last_game_info_request > GAME_INFO_REQUEST_INTERVAL then
 		last_game_info_request = now
-		modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+		transmit( {
 			Gravity_Girl = "best game ever";
 			type = "game_info_request";
 
@@ -143,7 +152,7 @@ local last_players_ping = -1
 function ping_players( now )
 	if not selected_game and now - last_players_ping > PLAYER_PING_INTERVAL then
 		last_players_ping = now
-		modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+		transmit( {
 			Gravity_Girl = "best game ever";
 			type = "ping";
 
@@ -301,7 +310,7 @@ while n_players < total_players do
 
 		if not selected_game and n_players < total_players then
 			if message.type == "game_lookup" then
-				modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+				transmit( {
 					Gravity_Girl = "best game ever";
 					type = "game_lookup_response";
 
@@ -333,7 +342,7 @@ while n_players < total_players do
 			last_seen_server = now
 
 			if message.game_ID == selected_game.game_ID then
-				modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+				transmit( {
 					Gravity_Girl = "best game ever";
 					type = "pong";
 
@@ -344,7 +353,7 @@ while n_players < total_players do
 
 		elseif not selected_game and message.type == "game_info_request" then
 			if message.game_ID == local_game then
-				modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+				transmit( {
 					Gravity_Girl = "best game ever";
 					type = "game_info";
 
@@ -373,6 +382,9 @@ while n_players < total_players do
 		if ev[ 2 ] == "q" then
 			error()
 		end
+
+	elseif ev[ 1 ] == "terminate" then
+		error()
 	end
 
 	-- Update loading hint
@@ -475,7 +487,7 @@ while time_left > 0 do
 
 		elseif not selected_game and message.type == "game_info_request" then
 			if message.game_ID == local_game then
-				modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+				transmit( {
 					Gravity_Girl = "best game ever";
 					type = "game_info";
 

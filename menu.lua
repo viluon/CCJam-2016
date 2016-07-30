@@ -5,8 +5,10 @@ if not ( term.isColour and term.isColour() ) then
 	error( "Gravity Girl needs an advanced computer!", 0 )
 end
 
+local directory = fs.getDir( shell.getRunningProgram() )
+
 -- Built with [BLittle](http://www.computercraft.info/forums2/index.php?/topic/25354-cc-176-blittle-api/) by Bomb Bloke
-if not fs.exists "blittle" then shell.run "pastebin get ujchRSnU blittle" end
+if not fs.exists "/blittle" then shell.run "pastebin get ujchRSnU /blittle" end
 if not blittle then os.loadAPI "blittle" end
 
 -- The following disclaimer applies to the easeInOutQuad function, defined further down the file, which has been taken (with slight modifications)
@@ -39,8 +41,7 @@ local math = math
 local term = term
 
 local actual_term = term.current()
-local directory = fs.getDir( shell.getRunningProgram() )
-local logfile = io.open( "/menu_log.txt", "a" )
+local logfile = io.open( directory .. "/menu_log.txt", "a" )
 
 local capture
 local old_term = actual_term
@@ -223,15 +224,33 @@ again. Remember, spacebar
 switches gravity!
 ]]
 			elseif state == "search_menu" then
-				return show_message [[
+				if not selected_search_result then
+					return show_message [[
 This is the search menu.
 Here you can see a list
 of nearby games waiting
 for players. To join a
-game, click it in the list
-and then click "Join"
+game, click on it in the
+list and then click "Join"
 at the left of the screen.
 ]]
+				else
+					if not clash_found then
+						return show_message [[
+Click the green Join
+button to jump into
+the game!
+]]
+					else
+						return show_message [[
+Click the Play button
+to switch to the
+settings menu and edit
+your name and colour
+appropriately.
+]]
+					end
+				end
 			end
 		end;
 	};
@@ -266,7 +285,7 @@ local launch_settings = {
 		name = "Player Colour";
 		value = 1;
 		options = {
-			colours.pink, colours.green, colours.blue, colours.yellow, colours.cyan, colours.magenta
+			colours.green, colours.blue, colours.yellow, colours.cyan, colours.magenta, colours.pink
 		};
 
 		type = "colour";
@@ -639,7 +658,7 @@ function draw_search_results()
 			parent_window.write( element.game_details.connected .. "/" .. element.game_details.max )
 
 		elseif #search_results == 1 then
-			local text = "Searching for games..."
+			local text = modem and "Searching for games..." or element.name
 
 			parent_window.setCursorPos( width / 2 - #text / 2, element.position )
 			parent_window.write( text )
@@ -1294,4 +1313,4 @@ logfile:close()
 term.redirect( old_term )
 term.setCursorPos( 1, 1 )
 
-shell.run( directory .. "/yellowave.lua", 1 )
+shell.run( "yellowave.lua", 1 )

@@ -1,11 +1,13 @@
 
 -- Gravity Girl, a Gravity Guy clone by @viluon
 
+local directory = fs.getDir( shell.getRunningProgram() )
+
 -- Built with [BLittle](http://www.computercraft.info/forums2/index.php?/topic/25354-cc-176-blittle-api/) by Bomb Bloke
-if not fs.exists "blittle" then shell.run "pastebin get ujchRSnU blittle" end
+if not fs.exists "/blittle" then shell.run "pastebin get ujchRSnU /blittle" end
 if not blittle then os.loadAPI "blittle" end
 -- and [bump.lua](https://github.com/kikito/bump.lua) by kikito
-local bump = dofile "bump.lua"
+local bump = dofile( directory .. "/bump.lua" )
 local logfile = io.open( "/log.txt", "a" )
 
 local arguments = ( { ... } )[ 1 ]
@@ -17,6 +19,7 @@ local INITIAL_SCROLL_SPEED = 2
 local PLAYER_BASIC_H_SPEED = 10
 local PLAYER_H_SPEED = 5
 local PLAYER_REFRESH_INTERVAL = 0.2
+local FPS_COUNTER_RESET_INTERVAL = 0.5
 
 local old_term = term.current()
 local width, height = old_term.getSize()
@@ -24,7 +27,7 @@ local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
 local main_window = blittle.createWindow( parent_window, nil, nil, nil, nil, false )
 
 local	draw, draw_player, update_player, round, log, deepcopy, draw_background, setting, refresh_players, convert_image, draw_image, update_level,
-		update_backgrounds
+		update_backgrounds, transmit
 
 local local_player
 local _, winner
@@ -59,7 +62,6 @@ local segments = {}
 local backgrounds = {}
 local active_backgrounds = {}
 
-local directory = fs.getDir( shell.getRunningProgram() )
 local segments_dir = directory .. "/level_segments/"
 
 for i, name in ipairs( fs.list( segments_dir ) ) do
@@ -84,6 +86,15 @@ local backgrounds_dir = directory .. "/backgrounds/"
 local starters = {}
 local starter
 
+--- Transmit a Gravity Girl packet
+-- @param data description
+-- @return nil
+function transmit( data )
+	if modem then
+		return modem.transmit( GAME_CHANNEL, GAME_CHANNEL, data )
+	end
+end
+
 if broadcast then
 	for i, segment in ipairs( segments ) do
 		if segment.starter then
@@ -98,7 +109,7 @@ if broadcast then
 	starter = starters[ math.random( 1, #starters ) ]
 
 	sleep( 0.5 )
-	modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+	transmit( {
 		Gravity_Girl = "best game ever";
 		type = "starter";
 
@@ -118,7 +129,7 @@ else
 			received = true
 			starter = message.data
 
-			modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+			transmit( {
 				Gravity_Girl = "best game ever";
 				type = "starter_response";
 
@@ -202,7 +213,7 @@ local last_player_refresh = -1
 function refresh_players( now )
 	if broadcast and now - last_player_refresh > PLAYER_REFRESH_INTERVAL then
 		last_player_refresh = now
-		modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+		transmit( {
 			Gravity_Girl = "best game ever";
 			type = "player_refresh";
 
@@ -328,7 +339,7 @@ function update_player( player, dt )
 		world:remove( player.ID )
 
 		if player == local_player then
-			modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+			transmit( {
 				Gravity_Girl = "best game ever";
 				type = "player_update";
 
@@ -400,7 +411,7 @@ for i, name in ipairs( fs.list( backgrounds_dir ) ) do
 		local info = textutils.unserialise( contents )
 
 		backgrounds[ name:gsub( "%.bg$", "" ) ] = {
-			data = convert_image( paintutils.loadImage( shell.resolve( backgrounds_dir .. info.path ) ) );
+			data = convert_image( paintutils.loadImage( backgrounds_dir .. "/" .. info.path ) );
 			width = info.width;
 			height = info.height;
 		}
@@ -429,6 +440,9 @@ end
 local last_time = os.clock()
 local end_queued = false
 local running = true
+local n_frames = 0
+local last_n_frames = 0
+local counter_reset = last_time
 
 while running do
 	parent_window.setVisible( false )
@@ -446,8 +460,7 @@ while running do
 	if ev[ 1 ] == "key" then
 		if ev[ 2 ] == keys.space and local_player.can_switch then
 			local_player.speed = -local_player.speed
-
-			modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+			transmit( {
 				Gravity_Girl = "best game ever";
 				type = "player_update";
 
@@ -541,7 +554,7 @@ while running do
 				obj.x = obj.x + furthest_block_generated
 
 				if broadcast then
-					modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+					transmit( {
 						Gravity_Girl = "best game ever";
 						type = "world_update_add";
 
@@ -564,7 +577,7 @@ while running do
 				bg.pos = furthest_block_generated + i
 				active_backgrounds[ #active_backgrounds + 1 ] = bg
 
-				modem.transmit( GAME_CHANNEL, GAME_CHANNEL, {
+				transmit( {
 					Gravity_Girl = "best game ever";
 					type = "background_add";
 
@@ -628,12 +641,25 @@ while running do
 	parent_window.write( local_player.dead and "dead" or "alive" )
 	--]]
 
-	parent_window.setCursorPos( 1, 1 )
 	parent_window.setTextColour( colours.black )
 	parent_window.setBackgroundColour( colours.white )
+
+	parent_window.setCursorPos( 1, 1 )
 	parent_window.write( "Score: " .. math.floor( local_player.position.x ) )
 
+	parent_window.setCursorPos( 1, 2 )
+	parent_window.write( "FPS: " .. math.floor( last_n_frames / FPS_COUNTER_RESET_INTERVAL ) )
+
 	parent_window.setVisible( true )
+
+	n_frames = n_frames + 1
+
+	if now - counter_reset > FPS_COUNTER_RESET_INTERVAL then
+		counter_reset = now
+
+		last_n_frames = n_frames
+		n_frames = 0
+	end
 
 	last_time = now
 end
