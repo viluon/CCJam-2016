@@ -1,175 +1,173 @@
-( function()
-	return {
-		-- Bottom
-		{
-			x = 1;
-			y = 0;
+return {
+	-- Bottom
+	{
+		x = 1;
+		y = 0;
 
-			width = 6;
-			height = 3;
-			colour = 16384; -- colours.red
-		};
-		{
-			x = 7;
-			y = 3;
+		width = 6;
+		height = 3;
+		colour = colours.orange;
+	};
+	{
+		x = 7;
+		y = 3;
 
-			width = 6;
-			height = 3;
-			colour = 16384; -- colours.red
-		};
-		{
-			x = 13;
-			y = 6;
+		width = 6;
+		height = 3;
+		colour = colours.orange;
+	};
+	{
+		x = 13;
+		y = 6;
 
-			width = 6;
-			height = 3;
-			colour = 16384; -- colours.red
-		};
-		{
-			x = 19;
-			y = 9;
+		width = 6;
+		height = 3;
+		colour = colours.orange;
+	};
+	{
+		x = 19;
+		y = 9;
 
-			width = 6;
-			height = 3;
-			colour = 16384; -- colours.red
-		};
-		{
-			x = 25;
-			y = 12;
+		width = 6;
+		height = 3;
+		colour = colours.orange;
+	};
+	{
+		x = 25;
+		y = 12;
 
-			width = 6;
-			height = 3;
-			colour = 16384; -- colours.red
-		};
-		{
-			x = 31;
-			y = 15;
+		width = 6;
+		height = 3;
+		colour = colours.orange;
+	};
+	{
+		x = 31;
+		y = 15;
 
-			width = 6;
-			height = 3;
-			colour = 16384; -- colours.red
-		};
-		{
-			x = 37;
-			y = 18;
+		width = 6;
+		height = 3;
+		colour = colours.orange;
+	};
+	{
+		x = 37;
+		y = 18;
 
-			width = 6;
-			height = 3;
-			colour = 16384; -- colours.red
-		};
-		{
-			x = 43;
-			y = 21;
+		width = 6;
+		height = 3;
+		colour = colours.orange;
+	};
+	{
+		x = 43;
+		y = 21;
 
-			width = 6;
-			height = 3;
-			colour = 16384; -- colours.red
-		};
-		--[[
-		{
-			x = 49;
-			y = 24;
+		width = 6;
+		height = 3;
+		colour = colours.orange;
+	};
+	--[[
+	{
+		x = 49;
+		y = 24;
 
-			width = 6;
-			height = 3;
-			colour = 16384; -- colours.red
-		};
-		{
-			x = 55;
-			y = 27;
+		width = 6;
+		height = 3;
+		colour = colours.orange;
+	};
+	{
+		x = 55;
+		y = 27;
 
-			width = 6;
-			height = 3;
-			colour = 16384; -- colours.red
-		};
-		]]
+		width = 6;
+		height = 3;
+		colour = colours.orange;
+	};
+	]]
 
-		-- Top
-		{
-			x = 1;
-			y = 54;
+	-- Top
+	{
+		x = 1;
+		y = 54;
 
-			width = 6;
-			height = 3;
-			colour = 16384; -- colours.red
-		};
-		{
-			x = 7;
-			y = 51;
+		width = 6;
+		height = 3;
+		colour = colours.orange;
+	};
+	{
+		x = 7;
+		y = 51;
 
-			width = 6;
-			height = 3;
-			colour = 16384; -- colours.red
-		};
-		{
-			x = 13;
-			y = 48;
+		width = 6;
+		height = 3;
+		colour = colours.orange;
+	};
+	{
+		x = 13;
+		y = 48;
 
-			width = 6;
-			height = 3;
-			colour = 16384; -- colours.red
-		};
-		{
-			x = 19;
-			y = 45;
+		width = 6;
+		height = 3;
+		colour = colours.orange;
+	};
+	{
+		x = 19;
+		y = 45;
 
-			width = 6;
-			height = 3;
-			colour = 16384; -- colours.red
-		};
-		{
-			x = 25;
-			y = 42;
+		width = 6;
+		height = 3;
+		colour = colours.orange;
+	};
+	{
+		x = 25;
+		y = 42;
 
-			width = 6;
-			height = 3;
-			colour = 16384; -- colours.red
-		};
-		{
-			x = 31;
-			y = 39;
+		width = 6;
+		height = 3;
+		colour = colours.orange;
+	};
+	{
+		x = 31;
+		y = 39;
 
-			width = 6;
-			height = 3;
-			colour = 16384; -- colours.red
-		};
-		{
-			x = 37;
-			y = 36;
+		width = 6;
+		height = 3;
+		colour = colours.orange;
+	};
+	{
+		x = 37;
+		y = 36;
 
-			width = 6;
-			height = 3;
-			colour = 16384; -- colours.red
-		};
-		{
-			x = 43;
-			y = 33;
+		width = 6;
+		height = 3;
+		colour = colours.orange;
+	};
+	{
+		x = 43;
+		y = 33;
 
-			width = 6;
-			height = 3;
-			colour = 16384; -- colours.red
-		};
-		--[[
-		{
-			x = 49;
-			y = 30;
+		width = 6;
+		height = 3;
+		colour = colours.orange;
+	};
+	--[[
+	{
+		x = 49;
+		y = 30;
 
-			width = 6;
-			height = 3;
-			colour = 16384; -- colours.red
-		};
-		{
-			x = 55;
-			y = 27;
+		width = 6;
+		height = 3;
+		colour = colours.orange;
+	};
+	{
+		x = 55;
+		y = 27;
 
-			width = 6;
-			height = 3;
-			colour = 16384; -- colours.red
-		};
-		]]
-		
-		type = "middle";
-		follow_up = { "top", "bottom" };
-		background = { "cloudy_skies" };
-	}
-end )()
+		width = 6;
+		height = 3;
+		colour = colours.orange;
+	};
+	]]
+
+	type = "middle";
+	follow_up = { "top", "bottom" };
+	background = { "cloudy_skies" };
+}

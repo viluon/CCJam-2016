@@ -6,6 +6,7 @@ if not ( term.isColour and term.isColour() ) then
 end
 
 local directory = fs.getDir( shell.getRunningProgram() )
+local settings_path = fs.combine( directory, ".Gravity_Girl_settings" )
 
 -- Built with [BLittle](http://www.computercraft.info/forums2/index.php?/topic/25354-cc-176-blittle-api/) by Bomb Bloke
 if not fs.exists "/blittle" then shell.run "pastebin get ujchRSnU /blittle" end
@@ -39,6 +40,8 @@ local JOIN_BUTTON_ANIM_LENGTH = 0.3
 
 local math = math
 local term = term
+local colours = colours
+local keys = keys
 
 local actual_term = term.current()
 local logfile = io.open( directory .. "/menu_log.txt", "a" )
@@ -75,7 +78,7 @@ old_term = {
 
 		return actual_term.setCursorPos( x, y )
 	end;
-	
+
 	getCursorPos = actual_term.getCursorPos;
 	getSize = actual_term.getSize;
 	setCursorBlink = actual_term.setCursorBlink;
@@ -197,6 +200,7 @@ local menu = {
 		end;
 		animation = {
 			colour_a = colours.white;
+			colour_b = colours.green;
 			start_time = -1;
 			pos = 4;
 		};
@@ -370,7 +374,7 @@ function random_fill()
 			term.setBackgroundColour( colours.grey )
 			term.write( " " )
 		end
-		
+
 		last_pass = os.clock()
 	end
 end
@@ -402,9 +406,9 @@ end
 --- Load settings from file (if exists)
 -- @return nil
 function load_settings()
-	if not fs.exists( directory .. "/.Gravity_Girl_settings" ) then return end
+	if not fs.exists( settings_path ) then return end
 
-	local f = io.open( directory .. "/.Gravity_Girl_settings", "r" )
+	local f = io.open( settings_path, "r" )
 	local contents = f:read( "*a" )
 	f:close()
 
@@ -431,7 +435,10 @@ function save_settings()
 
 	local contents = textutils.serialise( setting_values )
 
-	local f = io.open( directory .. "/.Gravity_Girl_settings", "w" )
+	local f = io.open( settings_path, "w" )
+	if not f then
+		error( "Could not write to the settings file at " .. settings_path )
+	end
 	f:write( contents )
 	f:close()
 end
@@ -458,7 +465,7 @@ function animate_join_button( now )
 			for ID, player in pairs( selected_game.players or {} ) do
 				if player.name == launch_settings[ 2 ].value or player.colour == launch_settings[ 3 ].options[ launch_settings[ 3 ].value ] then
 					new_colour = colours.red
-					
+
 					if player.name == launch_settings[ 2 ].value then
 						clash_found = "A player with your name\nhas already connected\nto the game."
 					else
@@ -587,7 +594,7 @@ function draw_secret_settings()
 		parent_window.setTextColour( element.options and colours.white or ( selected and colours.grey or colours.white ) )
 
 		local text = element.options and tostring( element.type == "colour" and "  " or element.options[ element.value ] ) or tostring( element.value )
-		
+
 		if #text > width / 3 then
 			text = "..." .. text:sub( 4 + #text - width / 3, -1 )
 		end
@@ -626,7 +633,7 @@ function draw_settings()
 		parent_window.setTextColour( element.options and colours.white or ( selected and colours.grey or colours.white ) )
 
 		local text = element.options and tostring( element.type == "colour" and "  " or element.options[ element.value ] ) or tostring( element.value )
-		
+
 		if #text > width / 3 then
 			text = "..." .. text:sub( 4 + #text - width / 3, -1 )
 		end
@@ -758,7 +765,7 @@ end
 function play()
 	local now = os.clock()
 	state = "play_menu"
-	
+
 	randomize_logo_colour()
 	logo_start_redraw_time = now
 
@@ -846,7 +853,7 @@ end
 function back_from_play()
 	local now = os.clock()
 	state = "main_menu"
-	
+
 	logo_coloured = false
 	logo_start_redraw_time = now
 
@@ -1107,7 +1114,7 @@ while running do
 				if type( selected_settings_element.value ) == "string" and #selected_settings_element.value > 0 then
 					selected_settings_element.value = selected_settings_element.value:sub( 1, -2 )
 				end
-			
+
 			elseif ev[ 2 ] == keys.left then
 				if selected_settings_element.options then
 					selected_settings_element.value = math.max( 1, math.min( selected_settings_element.value - 1, #selected_settings_element.options ) )
@@ -1126,7 +1133,7 @@ while running do
 						break
 					end
 				end
-			
+
 			elseif ev[ 2 ] == keys.down then
 				-- Find the index of the selected_settings_element and select the one after that
 				for i, element in ipairs( launch_settings ) do
@@ -1137,7 +1144,7 @@ while running do
 				end
 			end
 		end
-		
+
 		if ev[ 2 ] == keys.enter then
 			if secret_menu then
 				selected_secret_settings_element = nil
@@ -1308,9 +1315,11 @@ while running do
 	last_time = now
 end
 
-logfile:close()
-
 term.redirect( old_term )
 term.setCursorPos( 1, 1 )
 
-shell.run( "yellowave.lua", 1 )
+if not tostring( logfile ):find( "closed" ) then
+	logfile:close()
+end
+
+shell.run( directory .. "/yellowave.lua", math.random() < 0.5 and 1 or 7 )

@@ -1,0 +1,35 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"workbench.colorCustomizations": {
+			"activityBar.activeBackground": "#ab17ca",
+			"activityBar.activeBorder": "#393007",
+			"activityBar.background": "#ab17ca",
+			"activityBar.foreground": "#e7e7e7",
+			"activityBar.inactiveForeground": "#e7e7e799",
+			"activityBarBadge.background": "#393007",
+			"activityBarBadge.foreground": "#e7e7e7",
+			"sash.hoverBorder": "#ab17ca",
+			"statusBar.background": "#84129c",
+			"statusBar.foreground": "#e7e7e7",
+			"statusBarItem.hoverBackground": "#ab17ca",
+			"statusBarItem.remoteBackground": "#84129c",
+			"statusBarItem.remoteForeground": "#e7e7e7",
+			"titleBar.activeBackground": "#84129c",
+			"titleBar.activeForeground": "#e7e7e7",
+			"titleBar.inactiveBackground": "#84129c99",
+			"titleBar.inactiveForeground": "#e7e7e799"
+		},
+		"peacock.color": "#84129c",
+		"files.associations": {
+			"*.tbl": "lua"
+		},
+		"Lua.diagnostics.globals": [
+			"colours"
+		]
+	}
+}

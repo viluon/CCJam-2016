@@ -1,50 +1,48 @@
-( function()
-	return {
-		{
-			x = 1;
-			y = 11;
+return {
+	{
+		x = 1;
+		y = 12;
 
-			width = 22;
-			height = 3;
-			colour = 128; -- colours.grey
-		};
-		{
-			x = 20;
-			y = 25;
+		width = 22;
+		height = 3;
+		colour = colours.lightGrey;
+	};
+	{
+		x = 20;
+		y = 24;
 
-			width = 22;
-			height = 3;
-			colour = 128; -- colours.grey
-		};
-		{
-			x = 1;
-			y = 40;
+		width = 22;
+		height = 3;
+		colour = colours.lightGrey;
+	};
+	{
+		x = 1;
+		y = 39;
 
-			width = 22;
-			height = 3;
-			colour = 128; -- colours.grey
-		};
+		width = 22;
+		height = 3;
+		colour = colours.lightGrey;
+	};
 
-		{
-			x = 38;
-			y = 40;
+	{
+		x = 38;
+		y = 39;
 
-			width = 22;
-			height = 3;
-			colour = 128; -- colours.grey
-		};
-		{
-			x = 38;
-			y = 11;
+		width = 22;
+		height = 3;
+		colour = colours.lightGrey;
+	};
+	{
+		x = 38;
+		y = 12;
 
-			width = 22;
-			height = 3;
-			colour = 128; -- colours.grey
-		};
+		width = 22;
+		height = 3;
+		colour = colours.lightGrey;
+	};
 
-		type = "middle";
+	type = "middle";
 
-		follow_up = { "top", "bottom" };
-		background = { "cloudy_skies" };
-	}
-end )()
+	follow_up = { "top", "bottom" };
+	background = { "cloudy_skies" };
+}

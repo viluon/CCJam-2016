@@ -21,13 +21,20 @@ local PLAYER_H_SPEED = 5
 local PLAYER_REFRESH_INTERVAL = 0.2
 local FPS_COUNTER_RESET_INTERVAL = 0.5
 
+local term = term
+local window = window
+local blittle = blittle
+local colours = colours
+local textutils = textutils
+local paintutils = paintutils
+
 local old_term = term.current()
 local width, height = old_term.getSize()
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
 local main_window = blittle.createWindow( parent_window, nil, nil, nil, nil, false )
 
 local	draw, draw_player, update_player, round, log, deepcopy, draw_background, setting, refresh_players, convert_image, draw_image, update_level,
-		update_backgrounds, transmit
+		update_backgrounds, transmit, update_particles, draw_particle
 
 local local_player
 local _, winner
@@ -64,16 +71,38 @@ local active_backgrounds = {}
 
 local segments_dir = directory .. "/level_segments/"
 
+--- Rounds a number to a set amount of decimal places
+-- @param n The number to round
+-- @param places The number of decimal places to keep
+-- @return The result
+function round( n, places )
+	local mult = 10 ^ ( places or 0 )
+	return math.floor( n * mult + 0.5 ) / mult
+end
+
+local function progress( txt )
+	parent_window.setCursorPos( round( width / 2 - #txt / 2 ), round( height / 2 ) )
+	parent_window.setBackgroundColour( colours.black )
+	parent_window.setTextColour( colours.lightGrey )
+	parent_window.clearLine()
+	parent_window.write( txt )
+end
+
+progress "loading segments"
+
 for i, name in ipairs( fs.list( segments_dir ) ) do
 	local f = io.open( segments_dir .. name, "r" )
 	local contents = f:read( "*a" )
 	f:close()
 
-	segments[ i ] = textutils.unserialise( contents )
-	
+	segments[ i ] = load( contents, name, "t", { colours = colours } )()
+
 	local max_width = -1
 
-	for _, block in ipairs( segments[ i ] ) do
+	for j, block in ipairs( segments[ i ] ) do
+		if block.y % 3 ~= 0 or block.height % 3 ~= 0 then
+			error( "Block " .. j .. " of segment " .. name .. " is misaligned" )
+		end
 		max_width = math.max( max_width, block.x + block.width )
 	end
 
@@ -94,6 +123,8 @@ function transmit( data )
 		return modem.transmit( GAME_CHANNEL, GAME_CHANNEL, data )
 	end
 end
+
+progress "syncing world"
 
 if broadcast then
 	for i, segment in ipairs( segments ) do
@@ -149,6 +180,25 @@ end
 
 local last_segment = starter
 
+local particles = {}
+
+progress "adding particles"
+
+for i = 1, 7 do
+	particles[ i ] = {
+		math.random( 1, w );
+		math.random( 1, h );
+		5 * math.random( 8, 10 ); -- speed
+		math.pi * math.random();
+	}
+	particles[ i ][ 5 ] = particles[ i ][ 1 ]
+	particles[ i ][ 6 ] = particles[ i ][ 2 ]
+	particles[ i ][ 7 ] = particles[ i ][ 5 ]
+	particles[ i ][ 8 ] = particles[ i ][ 6 ]
+	particles[ i ][ 9 ] = particles[ i ][ 7 ]
+	particles[ i ][ 10 ] = particles[ i ][ 8 ]
+end
+
 local players = arguments.players
 local n_players = arguments.n_players
 local_player = players[ os.getComputerID() ]
@@ -176,15 +226,6 @@ function deepcopy( orig )
 		copy = orig
 	end
 	return copy
-end
-
---- Rounds a number to a set amount of decimal places
--- @param n The number to round
--- @param places The number of decimal places to keep
--- @return The result
-function round( n, places )
-	local mult = 10 ^ ( places or 0 )
-	return math.floor( n * mult + 0.5 ) / mult
 end
 
 --- Get the value of a setting by name
@@ -263,7 +304,7 @@ end
 function draw_player( player )
 	term.setBackgroundColor( player.colour )
 
-	for y = -player.height, 0 do
+	for y = -player.height + 1, 0 do
 		term.setCursorPos( round( player.position.x + camera_offset.x ), round( h - player.position.y + y + camera_offset.y ) )
 		term.write( ( " " ):rep( player.width ) )
 	end
@@ -275,7 +316,7 @@ end
 function draw_object( obj )
 	term.setBackgroundColor( obj.colour )
 
-	for y = -obj.height, 0 do
+	for y = -obj.height + 1, 0 do
 		term.setCursorPos( round( obj.x + camera_offset.x ), round( h - obj.y + y + camera_offset.y ) )
 		term.write( ( " " ):rep( obj.width ) )
 	end
@@ -321,6 +362,18 @@ function update_backgrounds()
 				table.remove( active_backgrounds, i )
 				break
 			end
+		end
+	end
+end
+
+--- Update particles.
+-- @param dt The time since the last update
+-- @return nil
+function update_particles( dt )
+	for _, particle in pairs( particles ) do
+		particle[ 1 ] = particle[ 1 ] - particle[ 3 ] * dt
+		if particle[ 1 ] + camera_offset.x < 0 then
+			particle[ 1 ] = particle[ 1 ] + w
 		end
 	end
 end
@@ -383,9 +436,9 @@ end
 
 --- Render the view
 -- @return nil
-function draw()
+function draw( now )
 	-- Draw the background
-	term.setBackgroundColor( colours.lightBlue )
+	term.setBackgroundColor( colours.black )
 	term.clear()
 
 	draw_background()
@@ -399,7 +452,41 @@ function draw()
 	for i, player in pairs( players ) do
 		draw_player( player )
 	end
+
+	-- Draw particles
+	for _, particle in pairs( particles ) do
+		draw_particle( particle, now )
+	end
 end
+
+function draw_particle( particle, now )
+	local wave_offset = 6 * math.sin( 3 * ( now + particle[ 4 ] ) )
+
+	local y = round( particle[ 2 ] + wave_offset + particle[ 4 ] * now + camera_offset.y ) % h
+	local x = round( particle[ 1 ] + camera_offset.x )
+
+	-- trail
+	term.setBackgroundColour( colours.lightGrey )
+	term.setCursorPos( particle[ 7 ], particle[ 8 ] )
+	term.write( " " )
+	term.setCursorPos( particle[ 9 ], particle[ 10 ] )
+	term.write( " " )
+	-- particle
+	term.setBackgroundColour( colours.white )
+	term.setCursorPos( x, y )
+	term.write( " " )
+
+	if particle[ 5 ] ~= x or particle[ 6 ] ~= y then
+		particle[ 9 ] = particle[ 7 ]
+		particle[ 10 ] = particle[ 8 ]
+		particle[ 7 ] = particle[ 5 ]
+		particle[ 8 ] = particle[ 6 ]
+		particle[ 5 ] = x
+		particle[ 6 ] = y
+	end
+end
+
+progress "loading backgrounds"
 
 -- Load backgrounds
 for i, name in ipairs( fs.list( backgrounds_dir ) ) do
@@ -422,6 +509,8 @@ end
 log( "Starter is " )
 log( textutils.serialise( starter ) )
 
+progress "placing players"
+
 local index
 for i, position in ipairs( starter.player_positions ) do
 	index = next( players, index )
@@ -443,6 +532,8 @@ local running = true
 local n_frames = 0
 local last_n_frames = 0
 local counter_reset = last_time
+
+progress "ready"
 
 while running do
 	parent_window.setVisible( false )
@@ -628,7 +719,10 @@ while running do
 	-- Remove off-screen backgrounds
 	update_backgrounds()
 
-	draw()
+	-- Update particles
+	update_particles( dt )
+
+	draw( now )
 
 	main_window.setVisible( true )
 
@@ -641,8 +735,8 @@ while running do
 	parent_window.write( local_player.dead and "dead" or "alive" )
 	--]]
 
-	parent_window.setTextColour( colours.black )
-	parent_window.setBackgroundColour( colours.white )
+	parent_window.setTextColour( colours.white )
+	parent_window.setBackgroundColour( colours.black )
 
 	parent_window.setCursorPos( 1, 1 )
 	parent_window.write( "Score: " .. math.floor( local_player.position.x ) )
@@ -671,8 +765,8 @@ term.setCursorPos( 1, 1 )
 
 logfile:close()
 
-term.setTextColour( colours.white )
-term.setBackgroundColour( colours.grey )
+term.setTextColour( colours.lightGrey )
+term.setBackgroundColour( colours.black )
 term.clear()
 
 local heading = "Game over!"
