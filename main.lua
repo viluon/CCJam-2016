@@ -21,6 +21,13 @@ local PLAYER_H_SPEED = 5
 local PLAYER_REFRESH_INTERVAL = 0.2
 local FPS_COUNTER_RESET_INTERVAL = 0.5
 
+local term = term
+local window = window
+local blittle = blittle
+local colours = colours
+local textutils = textutils
+local paintutils = paintutils
+
 local old_term = term.current()
 local width, height = old_term.getSize()
 local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
@@ -69,11 +76,14 @@ for i, name in ipairs( fs.list( segments_dir ) ) do
 	local contents = f:read( "*a" )
 	f:close()
 
-	segments[ i ] = textutils.unserialise( contents )
-	
+	segments[ i ] = load( contents, name, "t", { colours = colours } )()
+
 	local max_width = -1
 
-	for _, block in ipairs( segments[ i ] ) do
+	for j, block in ipairs( segments[ i ] ) do
+		if block.y % 3 ~= 0 or block.height % 3 ~= 0 then
+			error( "Block " .. j .. " of segment " .. name .. " is misaligned" )
+		end
 		max_width = math.max( max_width, block.x + block.width )
 	end
 
@@ -263,7 +273,7 @@ end
 function draw_player( player )
 	term.setBackgroundColor( player.colour )
 
-	for y = -player.height, 0 do
+	for y = -player.height + 1, 0 do
 		term.setCursorPos( round( player.position.x + camera_offset.x ), round( h - player.position.y + y + camera_offset.y ) )
 		term.write( ( " " ):rep( player.width ) )
 	end
@@ -275,7 +285,7 @@ end
 function draw_object( obj )
 	term.setBackgroundColor( obj.colour )
 
-	for y = -obj.height, 0 do
+	for y = -obj.height + 1, 0 do
 		term.setCursorPos( round( obj.x + camera_offset.x ), round( h - obj.y + y + camera_offset.y ) )
 		term.write( ( " " ):rep( obj.width ) )
 	end
@@ -650,6 +660,12 @@ while running do
 	parent_window.setCursorPos( 1, 2 )
 	parent_window.write( "FPS: " .. math.floor( last_n_frames / FPS_COUNTER_RESET_INTERVAL ) )
 
+	parent_window.setBackgroundColour( colours.cyan )
+	for y = 1, h, 2 do
+		parent_window.setCursorPos( 26, y )
+		parent_window.write( "x" )
+	end
+
 	parent_window.setVisible( true )
 
 	n_frames = n_frames + 1
@@ -671,8 +687,8 @@ term.setCursorPos( 1, 1 )
 
 logfile:close()
 
-term.setTextColour( colours.white )
-term.setBackgroundColour( colours.grey )
+term.setTextColour( colours.lightGrey )
+term.setBackgroundColour( colours.black )
 term.clear()
 
 local heading = "Game over!"

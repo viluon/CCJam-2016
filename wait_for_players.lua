@@ -7,7 +7,7 @@ local GAME_CHANNEL = arguments.GAME_CHANNEL
 local ENABLE_LOGGING = arguments.ENABLE_LOGGING
 local PARTICLE_SPACING_VERTICAL = 9
 local PARTICLE_SPACING_HORIZONTAL = 5.9
-local LOADING_HINT_SHOW_TIME = 6
+local LOADING_HINT_SHOW_TIME = 8
 local GAME_INFO_REQUEST_INTERVAL = 2
 local PLAYER_PING_INTERVAL = 2
 local PLAYER_TIMEOUT = 4
@@ -19,6 +19,9 @@ arguments.SPEED = SPEED
 
 local directory = fs.getDir( shell.getRunningProgram() )
 local logfile = arguments.logfile
+
+local term = term
+local colours = colours
 
 local launch_settings = arguments.launch_settings
 local secret_settings = arguments.secret_settings
@@ -34,7 +37,7 @@ local parent_window = window.create( old_term, 1, 1, old_term.getSize() )
 local width, height = parent_window.getSize()
 
 local hint_start_y = math.floor( ( 2 / 3 ) * height ) + 2
-local hint_window = window.create( parent_window, 2, hint_start_y, width - 2, math.ceil( height / 3 ) )
+local hint_window = window.create( parent_window, 2, hint_start_y + 1, width - 2, math.ceil( height / 3 ) )
 local main_window = blittle.createWindow( parent_window )
 
 term.redirect( main_window )
@@ -55,7 +58,7 @@ local local_player = {
 		x = 0;
 		y = 0;
 	};
-	
+
 	position = {
 		x = 12;
 		y = h / 2;
@@ -206,7 +209,7 @@ end
 --- Print the current loading hint to the screen
 -- @return nil
 function draw_loading_hint()
-	term.setBackgroundColour( colours.grey )
+	term.setBackgroundColour( colours.black )
 
 	for y = hint_start_y, height do
 		term.setCursorPos( 1, y )
@@ -215,15 +218,19 @@ function draw_loading_hint()
 		term.write( " " )
 	end
 
+	term.setCursorPos( 1, hint_start_y )
+	-- print a teletext divider line
+	term.write( string.char( 140 ):rep( width ) )
+
 	term.setCursorPos( 1, height )
 	term.clearLine()
 
 	term.redirect( hint_window )
 
-	term.setBackgroundColour( colours.grey )
-	term.setTextColour( colours.white )
+	term.setBackgroundColour( colours.black )
+	term.setTextColour( colours.lightGrey )
 	term.clear()
-	term.setCursorPos( 1, 2 )
+	term.setCursorPos( 1, 1 )
 
 	print( loading_hints[ current_loading_hint ] )
 end
@@ -380,11 +387,11 @@ while n_players < total_players do
 
 	elseif ev[ 1 ] == "char" then
 		if ev[ 2 ] == "q" then
-			error()
+			return
 		end
 
 	elseif ev[ 1 ] == "terminate" then
-		error()
+		return
 	end
 
 	-- Update loading hint
@@ -436,7 +443,16 @@ while n_players < total_players do
 
 	local text = "(" .. n_players .. "/" .. total_players .. ")"
 
+	list_players()
+	draw_loading_hint()
+	hint_window.setVisible( true )
+	term.redirect( parent_window )
+
 	term.setBackgroundColour( colours.black )
+	term.setTextColour( colours.grey )
+	term.setCursorPos( 1, height )
+	term.write( "Q to cancel" )
+
 	term.setTextColour( colours.lightGrey )
 	term.setCursorPos( width / 2 - #text / 2, 3 )
 	term.write( text )
@@ -445,10 +461,6 @@ while n_players < total_players do
 	term.setCursorPos( width / 2 - #heading / 2, 2 )
 	term.write( heading )
 
-	list_players()
-	draw_loading_hint()
-
-	hint_window.setVisible( true )
 	parent_window.setVisible( true )
 	term.redirect( main_window )
 
