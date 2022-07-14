@@ -1,62 +1,60 @@
-( function()
-	return {
-		{
-			x = 1;
-			y = 54;
+return {
+	{
+		x = 1;
+		y = 54;
 
-			width = 22;
-			height = 3;
-			colour = 16384; -- colours.red
-		};
-		{
-			x = 1;
-			y = 0;
+		width = 22;
+		height = 3;
+		colour = colours.red
+	};
+	{
+		x = 1;
+		y = 0;
 
-			width = 22;
-			height = 3;
-			colour = 16384; -- colours.red
-		};
+		width = 22;
+		height = 3;
+		colour = colours.red
+	};
 
-		-- Middle block
-		{
-			x = 22;
-			y = 12;
+	-- Middle block
+	{
+		x = 22;
+		y = 12;
 
-			width = 2;
-			height = 33;
-			colour = 16384; -- colours.red
-		};
+		width = 2;
+		height = 33;
+		colour = colours.red
+	};
 
-		-- Little blocks above and below the main one
-		{
-			x = 22;
-			y = 0;
+	-- Little blocks above and below the main one
+	{
+		x = 22;
+		y = 0;
 
-			width = 2;
-			height = 6;
-			colour = 16384; -- colours.red
-		};
-		{
-			x = 22;
-			y = 51;
+		width = 2;
+		height = 6;
+		colour = colours.red
+	};
+	{
+		x = 22;
+		y = 51;
 
-			width = 2;
-			height = 6;
-			colour = 16384; -- colours.red
-		};
+		width = 2;
+		height = 6;
+		colour = colours.red
+	};
 
-		-- Finishing platform
-		{
-			x = 26;
-			y = 26;
+	-- Finishing platform
+	{
+		x = 26;
+		y = 27;
 
-			width = 25;
-			height = 3;
-			colour = 2; -- colours.orange
-		};
+		width = 25;
+		height = 3;
+		colour = colours.orange
+	};
 
-		type = "middle";
-		follow_up = { "bottom", "top" };
-		background = { "big_cloud" };
-	}
-end )()
+	type = "middle";
+	follow_up = { "bottom", "top" };
+	background = { "big_cloud" };
+}

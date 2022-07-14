@@ -1,24 +1,22 @@
-( function()
-	return {
-		{
-			x = 1;
-			y = 51;
+return {
+	{
+		x = 1;
+		y = 51;
 
-			width = 22;
-			height = 3;
-			colour = 2; -- colours.orange
-		};
-		{
-			x = 24;
-			y = 0;
+		width = 22;
+		height = 3;
+		colour = colours.orange;
+	};
+	{
+		x = 24;
+		y = 0;
 
-			width = 22;
-			height = 3;
-			colour = 2; -- colours.orange
-		};
+		width = 22;
+		height = 3;
+		colour = colours.orange;
+	};
 
-		type = "top";
-		follow_up = { "top", "middle" };
-		background = { "dark_wires" };
-	}
-end )()
+	type = "top";
+	follow_up = { "top", "middle" };
+	background = { "dark_wires" };
+}

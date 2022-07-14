@@ -1,127 +1,125 @@
-( function()
-	return {
-		-- Borders
-		{
-			x = 1;
-			y = 37;
+return {
+	-- Borders
+	{
+		x = 1;
+		y = 36;
 
-			width = 62;
-			height = 3;
-			colour = 32; -- colours.lime
-		};
-		{
-			x = 1;
-			y = 17;
+		width = 62;
+		height = 3;
+		colour = colours.lime;
+	};
+	{
+		x = 1;
+		y = 18;
 
-			width = 62;
-			height = 3;
-			colour = 32; -- colours.lime
-		};
+		width = 62;
+		height = 3;
+		colour = colours.lime;
+	};
 
-		-- Just to make sure nobody runs on the opposite side of the border
-		{
-			x = 11;
-			y = 40;
+	-- Just to make sure nobody runs on the opposite side of the border
+	{
+		x = 11;
+		y = 39;
 
-			width = 2;
-			height = 5;
-			colour = 32; -- colours.lime
-		};
-		{
-			x = 11;
-			y = 12;
+		width = 2;
+		height = 6;
+		colour = colours.lime;
+	};
+	{
+		x = 11;
+		y = 12;
 
-			width = 2;
-			height = 5;
-			colour = 32; -- colours.lime
-		};
+		width = 2;
+		height = 6;
+		colour = colours.lime;
+	};
 
-		-- Obstacles
-		{
-			x = 9;
-			y = 34; -- up
+	-- Obstacles
+	{
+		x = 9;
+		y = 33; -- up
 
-			width = 2;
-			height = 3;
-			colour = 128; -- colours.lightGrey
-		};
-		{
-			x = 17;
-			y = 20; -- down
+		width = 2;
+		height = 3;
+		colour = colours.lightGrey;
+	};
+	{
+		x = 17;
+		y = 21; -- down
 
-			width = 2;
-			height = 3;
-			colour = 128; -- colours.lightGrey
-		};
-		{
-			x = 25;
-			y = 34; -- up
+		width = 2;
+		height = 3;
+		colour = colours.lightGrey;
+	};
+	{
+		x = 25;
+		y = 33; -- up
 
-			width = 2;
-			height = 3;
-			colour = 128; -- colours.lightGrey
-		};
-		{
-			x = 33;
-			y = 20; -- down
+		width = 2;
+		height = 3;
+		colour = colours.lightGrey;
+	};
+	{
+		x = 33;
+		y = 21; -- down
 
-			width = 2;
-			height = 3;
-			colour = 128; -- colours.lightGrey
-		};
-		{
-			x = 41;
-			y = 34; -- up
+		width = 2;
+		height = 3;
+		colour = colours.lightGrey;
+	};
+	{
+		x = 41;
+		y = 33; -- up
 
-			width = 2;
-			height = 3;
-			colour = 128; -- colours.lightGrey
-		};
-		{
-			x = 52;
-			y = 20; -- down
+		width = 2;
+		height = 3;
+		colour = colours.lightGrey;
+	};
+	{
+		x = 52;
+		y = 21; -- down
 
-			width = 2;
-			height = 3;
-			colour = 128; -- colours.lightGrey
-		};
-		{
-			x = 60;
-			y = 34; -- up
+		width = 2;
+		height = 3;
+		colour = colours.lightGrey;
+	};
+	{
+		x = 60;
+		y = 33; -- up
 
-			width = 2;
-			height = 3;
-			colour = 128; -- colours.lightGrey
-		};
+		width = 2;
+		height = 3;
+		colour = colours.lightGrey;
+	};
 
-		-- And add random blocks in the air to make shit harder
-		{
-			x = 11;
-			y = 25;
+	-- And add random blocks in the air to make shit harder
+	{
+		x = 11;
+		y = 27;
 
-			width = 4;
-			height = 3;
-			colour = 512; -- colours.cyan
-		};
-		{
-			x = 36;
-			y = 29;
+		width = 4;
+		height = 3;
+		colour = colours.cyan;
+	};
+	{
+		x = 36;
+		y = 30;
 
-			width = 2;
-			height = 3;
-			colour = 512; -- colours.cyan
-		};
-		{
-			x = 49;
-			y = 24;
+		width = 2;
+		height = 3;
+		colour = colours.cyan;
+	};
+	{
+		x = 49;
+		y = 24;
 
-			width = 3;
-			height = 2;
-			colour = 512; -- colours.cyan
-		};
+		width = 3;
+		height = 3;
+		colour = colours.cyan;
+	};
 
-		type = "middle";
-		follow_up = { "top", "bottom" };
-		background = { "big_cloud" };
-	}
-end )()
+	type = "middle";
+	follow_up = { "top", "bottom" };
+	background = { "big_cloud" };
+}

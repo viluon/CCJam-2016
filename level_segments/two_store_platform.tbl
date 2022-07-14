@@ -1,57 +1,55 @@
-( function()
-	return {
+return {
+	{
+		x = 1;
+		y = 0;
+
+		width = 44;
+		height = 3;
+		colour = colours.lightGrey;
+	};
+	{
+		x = 1;
+		y = 51;
+
+		width = 44;
+		height = 3;
+		colour = colours.lightGrey;
+	};
+
+	-- Middle piece
+	{
+		x = 5;
+		y = 27;
+
+		width = 25;
+		height = 3;
+		colour = colours.lightGrey;
+	};
+
+	type = "middle";
+	starter = true;
+	player_positions = {
 		{
-			x = 1;
-			y = 0;
-
-			width = 44;
-			height = 3;
-			colour = 128; -- colours.grey
+			x = 7;
+			y = 4;
+			direction = 1;
 		};
 		{
-			x = 1;
-			y = 51;
-
-			width = 44;
-			height = 3;
-			colour = 128; -- colours.grey
+			x = 7;
+			y = 48;
+			direction = -1;
 		};
-
-		-- Middle piece
 		{
-			x = 5;
-			y = 26;
-
-			width = 25;
-			height = 3;
-			colour = 128; -- colours.grey
+			x = 7;
+			y = 29;
+			direction = 1;
 		};
-
-		type = "middle";
-		starter = true;
-		player_positions = {
-			{
-				x = 7;
-				y = 4;
-				direction = 1;
-			};
-			{
-				x = 7;
-				y = 48;
-				direction = -1;
-			};
-			{
-				x = 7;
-				y = 29;
-				direction = 1;
-			};
-			{
-				x = 7;
-				y = 23;
-				direction = -1;
-			};
+		{
+			x = 7;
+			y = 23;
+			direction = -1;
 		};
-		follow_up = { "top", "bottom", "middle" };
-		background = { "cloudy_skies" };
-	}
-end )()
+	};
+	follow_up = { "top", "bottom", "middle" };
+	background = { "cloudy_skies" };
+}

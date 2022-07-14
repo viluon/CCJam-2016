@@ -6,6 +6,7 @@ if not ( term.isColour and term.isColour() ) then
 end
 
 local directory = fs.getDir( shell.getRunningProgram() )
+local settings_path = fs.combine( directory, "Gravity_Girl_settings" )
 
 -- Built with [BLittle](http://www.computercraft.info/forums2/index.php?/topic/25354-cc-176-blittle-api/) by Bomb Bloke
 if not fs.exists "/blittle" then shell.run "pastebin get ujchRSnU /blittle" end
@@ -387,9 +388,15 @@ end
 --- Load settings from file (if exists)
 -- @return nil
 function load_settings()
-	if not fs.exists( directory .. "/.Gravity_Girl_settings" ) then return end
+	local legacy_path = fs.combine( directory, ".Gravity_Girl_settings" )
+	-- move the legacy settings file
+	if fs.exists( legacy_path ) then
+		fs.move( legacy_path, settings_path )
+	end
 
-	local f = io.open( directory .. "/.Gravity_Girl_settings", "r" )
+	if not fs.exists( settings_path ) then return end
+
+	local f = io.open( settings_path, "r" )
 	local contents = f:read( "*a" )
 	f:close()
 
@@ -416,7 +423,10 @@ function save_settings()
 
 	local contents = textutils.serialise( setting_values )
 
-	local f = io.open( directory .. "/.Gravity_Girl_settings", "w" )
+	local f = io.open( settings_path, "w" )
+	if not f then
+		error( "Could not write to the settings file at " .. settings_path )
+	end
 	f:write( contents )
 	f:close()
 end
