@@ -5,7 +5,7 @@ return {
 
 		width = 22;
 		height = 3;
-		colour = colours.red
+		colour = colours.lightGrey
 	};
 	{
 		x = 1;
@@ -13,7 +13,7 @@ return {
 
 		width = 22;
 		height = 3;
-		colour = colours.red
+		colour = colours.lightGrey
 	};
 
 	-- Middle block
@@ -23,7 +23,7 @@ return {
 
 		width = 2;
 		height = 33;
-		colour = colours.red
+		colour = colours.orange
 	};
 
 	-- Little blocks above and below the main one
@@ -33,7 +33,7 @@ return {
 
 		width = 2;
 		height = 6;
-		colour = colours.red
+		colour = colours.lightGrey
 	};
 	{
 		x = 22;
@@ -41,7 +41,7 @@ return {
 
 		width = 2;
 		height = 6;
-		colour = colours.red
+		colour = colours.lightGrey
 	};
 
 	-- Finishing platform

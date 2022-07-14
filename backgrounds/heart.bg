@@ -1,0 +1,7 @@
+( function()
+	return {
+		path = "heart.nfp";
+		width = 24;
+		height = 30;
+	}
+end )()

@@ -184,15 +184,19 @@ local particles = {}
 
 progress "adding particles"
 
-for i = 1, 10 do
+for i = 1, 7 do
 	particles[ i ] = {
 		math.random( 1, w );
 		math.random( 1, h );
-		6 * math.random( 8, 10 );
+		5 * math.random( 8, 10 ); -- speed
 		math.pi * math.random();
 	}
 	particles[ i ][ 5 ] = particles[ i ][ 1 ]
 	particles[ i ][ 6 ] = particles[ i ][ 2 ]
+	particles[ i ][ 7 ] = particles[ i ][ 5 ]
+	particles[ i ][ 8 ] = particles[ i ][ 6 ]
+	particles[ i ][ 9 ] = particles[ i ][ 7 ]
+	particles[ i ][ 10 ] = particles[ i ][ 8 ]
 end
 
 local players = arguments.players
@@ -462,8 +466,10 @@ function draw_particle( particle, now )
 	local x = round( particle[ 1 ] + camera_offset.x )
 
 	-- trail
-	term.setBackgroundColour( colours.white )
-	term.setCursorPos( particle[ 5 ], particle[ 6 ] )
+	term.setBackgroundColour( colours.lightGrey )
+	term.setCursorPos( particle[ 7 ], particle[ 8 ] )
+	term.write( " " )
+	term.setCursorPos( particle[ 9 ], particle[ 10 ] )
 	term.write( " " )
 	-- particle
 	term.setBackgroundColour( colours.white )
@@ -471,6 +477,10 @@ function draw_particle( particle, now )
 	term.write( " " )
 
 	if particle[ 5 ] ~= x or particle[ 6 ] ~= y then
+		particle[ 9 ] = particle[ 7 ]
+		particle[ 10 ] = particle[ 8 ]
+		particle[ 7 ] = particle[ 5 ]
+		particle[ 8 ] = particle[ 6 ]
 		particle[ 5 ] = x
 		particle[ 6 ] = y
 	end

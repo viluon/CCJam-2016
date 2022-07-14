@@ -18,5 +18,5 @@ return {
 
 	type = "top";
 	follow_up = { "top", "middle" };
-	background = { "dark_wires" };
+	background = { "heart" };
 }

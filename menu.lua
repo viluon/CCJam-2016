@@ -6,7 +6,7 @@ if not ( term.isColour and term.isColour() ) then
 end
 
 local directory = fs.getDir( shell.getRunningProgram() )
-local settings_path = fs.combine( directory, "Gravity_Girl_settings" )
+local settings_path = fs.combine( directory, ".Gravity_Girl_settings" )
 
 -- Built with [BLittle](http://www.computercraft.info/forums2/index.php?/topic/25354-cc-176-blittle-api/) by Bomb Bloke
 if not fs.exists "/blittle" then shell.run "pastebin get ujchRSnU /blittle" end
@@ -388,12 +388,6 @@ end
 --- Load settings from file (if exists)
 -- @return nil
 function load_settings()
-	local legacy_path = fs.combine( directory, ".Gravity_Girl_settings" )
-	-- move the legacy settings file
-	if fs.exists( legacy_path ) then
-		fs.move( legacy_path, settings_path )
-	end
-
 	if not fs.exists( settings_path ) then return end
 
 	local f = io.open( settings_path, "r" )

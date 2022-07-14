@@ -6,7 +6,7 @@ return {
 
 		width = 62;
 		height = 3;
-		colour = colours.lime;
+		colour = colours.lightGrey;
 	};
 	{
 		x = 1;
@@ -14,7 +14,7 @@ return {
 
 		width = 62;
 		height = 3;
-		colour = colours.lime;
+		colour = colours.lightGrey;
 	};
 
 	-- Just to make sure nobody runs on the opposite side of the border
@@ -24,7 +24,7 @@ return {
 
 		width = 2;
 		height = 6;
-		colour = colours.lime;
+		colour = colours.lightGrey;
 	};
 	{
 		x = 11;
@@ -32,7 +32,7 @@ return {
 
 		width = 2;
 		height = 6;
-		colour = colours.lime;
+		colour = colours.lightGrey;
 	};
 
 	-- Obstacles
@@ -42,7 +42,7 @@ return {
 
 		width = 2;
 		height = 3;
-		colour = colours.lightGrey;
+		colour = colours.grey;
 	};
 	{
 		x = 17;
@@ -50,7 +50,7 @@ return {
 
 		width = 2;
 		height = 3;
-		colour = colours.lightGrey;
+		colour = colours.grey;
 	};
 	{
 		x = 25;
@@ -58,7 +58,7 @@ return {
 
 		width = 2;
 		height = 3;
-		colour = colours.lightGrey;
+		colour = colours.grey;
 	};
 	{
 		x = 33;
@@ -66,7 +66,7 @@ return {
 
 		width = 2;
 		height = 3;
-		colour = colours.lightGrey;
+		colour = colours.grey;
 	};
 	{
 		x = 41;
@@ -74,7 +74,7 @@ return {
 
 		width = 2;
 		height = 3;
-		colour = colours.lightGrey;
+		colour = colours.grey;
 	};
 	{
 		x = 52;
@@ -82,7 +82,7 @@ return {
 
 		width = 2;
 		height = 3;
-		colour = colours.lightGrey;
+		colour = colours.grey;
 	};
 	{
 		x = 60;
@@ -90,7 +90,7 @@ return {
 
 		width = 2;
 		height = 3;
-		colour = colours.lightGrey;
+		colour = colours.grey;
 	};
 
 	-- And add random blocks in the air to make shit harder
